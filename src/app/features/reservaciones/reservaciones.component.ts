@@ -5,12 +5,13 @@ import { ApiService } from '../../core/services/api.service';
 import { WebSocketService } from '../../core/services/websocket.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Reservacion, Salon, Empleado, Curso, Jornada, ReservacionesStats } from '../../core/models';
-import { ModalComponent, PageHeaderComponent, EmptyStateComponent } from '../../shared';
+import { ModalComponent, PageHeaderComponent, EmptyStateComponent, CustomSelectComponent, SelectOption } from '../../shared';
+import { computed } from '@angular/core';
 
 @Component({
   selector: 'app-reservaciones',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalComponent, PageHeaderComponent, EmptyStateComponent],
+  imports: [CommonModule, FormsModule, ModalComponent, PageHeaderComponent, EmptyStateComponent, CustomSelectComponent],
   templateUrl: './reservaciones.component.html',
   styleUrl: './reservaciones.component.scss',
 })
@@ -25,6 +26,52 @@ export class ReservacionesComponent implements OnInit {
   empleadosList = signal<Empleado[]>([]);
   cursosList = signal<Curso[]>([]);
   jornadasList = signal<Jornada[]>([]);
+
+  // Computed Options for Custom Selects
+  tipoEventoOptions: SelectOption[] = [
+    { value: 'Taller Especial', label: 'Taller Técnico Especial', icon: '🔧', badge: 'Taller', badgeColor: 'gold' },
+    { value: 'Seminario', label: 'Seminario / Conferencia', icon: '🎓', badge: 'Seminario', badgeColor: 'blue' },
+    { value: 'Capacitación Empresarial', label: 'Capacitación Empresarial', icon: '💼', badge: 'Empresas', badgeColor: 'green' },
+    { value: 'Examen / Certificación', label: 'Evaluación / Certificación', icon: '📝', badge: 'Evaluación', badgeColor: 'red' },
+    { value: 'Práctica de Laboratorio', label: 'Práctica de Laboratorio', icon: '🔬' },
+    { value: 'Reunión Institucional', label: 'Reunión Institucional / Evento', icon: '🤝' },
+    { value: 'Otro Evento', label: 'Otro Evento Específico', icon: '✨' },
+  ];
+
+  salonesOptions = computed<SelectOption[]>(() =>
+    this.salonesList().map((s) => ({
+      value: s.id,
+      label: s.title,
+      subtitle: `${s.tipoSalon === 0 ? 'Taller Técnico' : 'Salón Teórico'} • Capacidad: ${s.cantidadPersonas || 25} personas`,
+      icon: s.tipoSalon === 0 ? '⚡' : '🏛️',
+    }))
+  );
+
+  empleadosOptions = computed<SelectOption[]>(() =>
+    this.empleadosList().map((e) => ({
+      value: e.id,
+      label: `${e.nombres} ${e.apellidos}`,
+      subtitle: e.profesion || e.tipoEmpleado?.tipoEmpleado || e.tipoEmpleado?.name || 'Docente',
+      icon: '👨‍🏫',
+    }))
+  );
+
+  cursosOptions = computed<SelectOption[]>(() =>
+    this.cursosList().map((c) => ({
+      value: c.id,
+      label: c.nombre,
+      icon: '📚',
+    }))
+  );
+
+  jornadasOptions = computed<SelectOption[]>(() => [
+    { value: 'Jornada Única', label: 'Jornada Única / Específica', icon: '⏰' },
+    ...this.jornadasList().map((j) => ({
+      value: j.nombre,
+      label: `${j.nombre} (${j.horaInicio || (j as any).horainicio || '07:30'} - ${j.horaFin || (j as any).horafin || '12:30'})`,
+      icon: '⏰',
+    })),
+  ]);
   
   stats = signal<ReservacionesStats>({
     total: 0,

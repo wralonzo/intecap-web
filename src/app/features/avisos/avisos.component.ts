@@ -6,16 +6,29 @@ import { ApiService } from '../../core/services/api.service';
 import { WebSocketService } from '../../core/services/websocket.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Aviso } from '../../core/models';
-import { ModalComponent, PageHeaderComponent, EmptyStateComponent } from '../../shared';
+import { ModalComponent, PageHeaderComponent, EmptyStateComponent, CustomSelectComponent, SelectOption } from '../../shared';
 
 @Component({
   selector: 'app-avisos',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ModalComponent, PageHeaderComponent, EmptyStateComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ModalComponent, PageHeaderComponent, EmptyStateComponent, CustomSelectComponent],
   templateUrl: './avisos.component.html',
   styleUrl: './avisos.component.scss',
 })
 export class AvisosComponent implements OnInit {
+  tiposAvisoOptions: SelectOption[] = [
+    { value: 'informativo', label: 'Informativo General', icon: '📢', badge: 'Info', badgeColor: 'blue' },
+    { value: 'urgente', label: 'Urgente / Importante', icon: '🚨', badge: 'Alta', badgeColor: 'red' },
+    { value: 'evento', label: 'Evento / Taller Especial', icon: '📅', badge: 'Evento', badgeColor: 'gold' },
+    { value: 'mantenimiento', label: 'Mantenimiento / Infraestructura', icon: '🛠️', badge: 'Técnico', badgeColor: 'gray' },
+    { value: 'general', label: 'General', icon: '📌' },
+  ];
+
+  prioridadesOptions: SelectOption[] = [
+    { value: 1, label: 'Alta (Primer lugar en rotación)', icon: '⚡', badge: 'Prioridad 1', badgeColor: 'red' },
+    { value: 2, label: 'Normal / Media', icon: '🔹', badge: 'Prioridad 2', badgeColor: 'blue' },
+    { value: 3, label: 'Baja', icon: '▫️', badge: 'Prioridad 3', badgeColor: 'gray' },
+  ];
   private api = inject(ApiService);
   private ws = inject(WebSocketService);
   private toast = inject(ToastService);

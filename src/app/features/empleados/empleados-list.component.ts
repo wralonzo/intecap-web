@@ -4,12 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Empleado, TipoEmpleado } from '../../core/models';
-import { PageHeaderComponent, ModalComponent, EmptyStateComponent } from '../../shared';
+import { PageHeaderComponent, ModalComponent, EmptyStateComponent, CustomSelectComponent, SelectOption } from '../../shared';
+import { computed } from '@angular/core';
 
 @Component({
   selector: 'app-empleados-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, ModalComponent, EmptyStateComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, ModalComponent, EmptyStateComponent, CustomSelectComponent],
   templateUrl: './empleados-list.component.html',
   styleUrl: './empleados-list.component.scss',
 })
@@ -21,6 +22,19 @@ export class EmpleadosListComponent implements OnInit {
   empleados = signal<Empleado[]>([]);
   puestos = signal<TipoEmpleado[]>([]);
   loading = signal(true);
+
+  puestosOptions = computed<SelectOption[]>(() =>
+    this.puestos().map((t) => ({
+      value: t.id,
+      label: t.name || t.tipoEmpleado || 'Puesto #' + t.id,
+      icon: '💼',
+    }))
+  );
+
+  staffOptions: SelectOption[] = [
+    { value: 0, label: 'Docente / Empleado Estándar (Acceso a sus cursos, horario y perfil)', badge: 'Docente', badgeColor: 'blue' },
+    { value: 1, label: 'Administrador Staff (Acceso completo a gestión del sistema)', badge: 'Staff', badgeColor: 'gold' },
+  ];
   
   showEmpModal = signal(false);
   isEditingEmp = signal(false);

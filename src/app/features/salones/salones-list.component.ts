@@ -13,12 +13,12 @@ import {
   Empleado,
   Jornada,
 } from '../../core/models';
-import { PageHeaderComponent, ModalComponent, EmptyStateComponent } from '../../shared';
+import { PageHeaderComponent, ModalComponent, EmptyStateComponent, CustomSelectComponent, SelectOption } from '../../shared';
 
 @Component({
   selector: 'app-salones-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, ModalComponent, EmptyStateComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, ModalComponent, EmptyStateComponent, CustomSelectComponent],
   templateUrl: './salones-list.component.html',
   styleUrl: './salones-list.component.scss',
 })
@@ -36,6 +36,59 @@ export class SalonesListComponent implements OnInit {
   cursosList = signal<Curso[]>([]);
   jornadasList = signal<Jornada[]>([]);
   empleadosList = signal<Empleado[]>([]);
+
+  // Computed Options for Custom Selects
+  diasSemanaOptions: SelectOption[] = [
+    { value: 1, label: 'Lunes' },
+    { value: 2, label: 'Martes' },
+    { value: 3, label: 'Miércoles' },
+    { value: 4, label: 'Jueves' },
+    { value: 5, label: 'Viernes' },
+    { value: 6, label: 'Sábado' },
+    { value: 7, label: 'Domingo' },
+  ];
+
+  tipoEspacioOptions: SelectOption[] = [
+    { value: 1, label: 'Salón Teórico / Aula', icon: '🏛️', badge: 'Salón', badgeColor: 'blue' },
+    { value: 0, label: 'Taller Práctico Técnico', icon: '⚡', badge: 'Taller', badgeColor: 'gold' },
+  ];
+
+  cursosHorarioOptions = computed<SelectOption[]>(() => [
+    { value: '', label: '-- Libre / Disponible --' },
+    ...this.cursosList().map((c) => ({
+      value: c.nombre,
+      label: c.nombre,
+      icon: '📚',
+    })),
+  ]);
+
+  jornadasOptions = computed<SelectOption[]>(() => [
+    { value: undefined, label: '-- Seleccionar Jornada --' },
+    ...this.jornadasList().map((j) => ({
+      value: j.id,
+      label: `${j.nombre} (${j.horaInicio || (j as any).horainicio || '07:30'} - ${j.horaFin || (j as any).horafin || '12:30'})`,
+      icon: '⏰',
+    })),
+  ]);
+
+  cursosIdOptions = computed<SelectOption[]>(() => [
+    { value: undefined, label: '-- Ninguno / Sin Asignar --' },
+    ...this.cursosList().map((c) => ({
+      value: c.id,
+      label: c.nombre,
+      icon: '📚',
+    })),
+  ]);
+
+  empleadosOptions = computed<SelectOption[]>(() => [
+    { value: undefined, label: '-- Sin Instructor Asignado --' },
+    ...this.empleadosList().map((e) => ({
+      value: e.id,
+      label: `${e.nombres} ${e.apellidos}`,
+      subtitle: e.profesion || e.tipoEmpleado?.name || e.tipoEmpleado?.tipoEmpleado || 'Docente',
+      icon: '👨‍🏫',
+    })),
+  ]);
 
   // RealTime Data
   diasSemana = ['Hoy', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo'];

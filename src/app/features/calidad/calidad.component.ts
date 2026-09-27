@@ -5,12 +5,12 @@ import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { exportToCsv, printHtmlReport } from '../../core/utils/export.util';
 import { ControlCalidad, Empleado, CalidadEstadisticas } from '../../core/models';
-import { PageHeaderComponent, EmptyStateComponent } from '../../shared';
+import { PageHeaderComponent, EmptyStateComponent, CustomSelectComponent, SelectOption } from '../../shared';
 
 @Component({
   selector: 'app-calidad',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, EmptyStateComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, EmptyStateComponent, CustomSelectComponent],
   templateUrl: './calidad.component.html',
   styleUrl: './calidad.component.scss',
 })
@@ -24,6 +24,23 @@ export class CalidadComponent implements OnInit {
   estadisticas = signal<CalidadEstadisticas | null>(null);
   loading = signal(true);
   saving = signal(false);
+
+  empleadosOptions = computed<SelectOption[]>(() => [
+    { value: null, label: '-- Selecciona un docente --' },
+    ...this.empleados().map((e) => ({
+      value: e.id,
+      label: `${e.nombres} ${e.apellidos}`,
+      subtitle: e.profesion || e.tipoEmpleado?.name || e.tipoEmpleado?.tipoEmpleado || 'Docente / Instructor',
+      icon: '👨‍🏫',
+    })),
+  ]);
+
+  productoFormacionOptions: SelectOption[] = [
+    { value: 'Guía Didáctica de Aprendizaje', label: 'Guía Didáctica de Aprendizaje', icon: '📄' },
+    { value: 'Plan de Sesión Formativa', label: 'Plan de Sesión Formativa', icon: '📋' },
+    { value: 'Evaluación Práctica de Taller', label: 'Evaluación Práctica de Taller', icon: '🔧' },
+    { value: 'Manual de Procedimientos Técnicos', label: 'Manual de Procedimientos Técnicos', icon: '📘' },
+  ];
 
   isEditing = signal(false);
   activeTab = 'general';

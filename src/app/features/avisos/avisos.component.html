@@ -226,23 +226,25 @@
           </div>
 
           <div class="form-group col-md-6">
-            <label>Categoría / Tipo de Aviso</label>
-            <select class="form-control" [(ngModel)]="formData.tipo" name="tipo">
-              <option value="informativo">📢 Informativo General</option>
-              <option value="urgente">🚨 Urgente / Importante</option>
-              <option value="evento">📅 Evento / Taller Especial</option>
-              <option value="mantenimiento">🛠️ Mantenimiento / Infraestructura</option>
-              <option value="general">📌 General</option>
-            </select>
+            <app-custom-select
+              label="Categoría / Tipo de Aviso"
+              [options]="tiposAvisoOptions"
+              [(ngModel)]="formData.tipo"
+              name="tipo"
+              [searchable]="false"
+              placeholder="Seleccionar tipo..."
+            ></app-custom-select>
           </div>
 
           <div class="form-group col-md-6">
-            <label>Nivel de Prioridad</label>
-            <select class="form-control" [(ngModel)]="formData.prioridad" name="prioridad">
-              <option [ngValue]="1">⚡ Alta (Primer lugar en rotación)</option>
-              <option [ngValue]="2">Normal / Media</option>
-              <option [ngValue]="3">Baja</option>
-            </select>
+            <app-custom-select
+              label="Nivel de Prioridad"
+              [options]="prioridadesOptions"
+              [(ngModel)]="formData.prioridad"
+              name="prioridad"
+              [searchable]="false"
+              placeholder="Seleccionar prioridad..."
+            ></app-custom-select>
           </div>
 
           <!-- Switch Mostrar en Pantalla TV -->

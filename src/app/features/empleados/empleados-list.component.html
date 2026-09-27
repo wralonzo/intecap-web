@@ -231,11 +231,14 @@
 
         <div class="form-group">
           <label>Puesto del Empleado *</label>
-          <select class="form-control" [(ngModel)]="activeEmp.tipoEmpleadoId" name="tipoEmpleadoId" required>
-            @for (t of puestos(); track t.id) {
-              <option [value]="t.id">{{ t.name || t.tipoEmpleado }}</option>
-            }
-          </select>
+          <app-custom-select
+            [options]="puestosOptions()"
+            [(ngModel)]="activeEmp.tipoEmpleadoId"
+            name="tipoEmpleadoId"
+            placeholder="Seleccionar puesto del empleado..."
+            [searchable]="true"
+            [required]="true"
+          ></app-custom-select>
         </div>
 
         <div class="form-row">
@@ -326,10 +329,13 @@
 
               <div class="form-group">
                 <label>Nivel de Permisos / Rol</label>
-                <select class="form-control" [(ngModel)]="activeEmp.staff" name="staff">
-                  <option [value]="0">Docente / Empleado Estándar (Acceso a sus cursos, horario y perfil)</option>
-                  <option [value]="1">Administrador Staff (Acceso completo a gestión del sistema)</option>
-                </select>
+                <app-custom-select
+                  [options]="staffOptions"
+                  [(ngModel)]="activeEmp.staff"
+                  name="staff"
+                  placeholder="Seleccionar nivel..."
+                  [searchable]="false"
+                ></app-custom-select>
               </div>
             </div>
           } @else if (isEditingEmp() && activeEmp.user) {

@@ -454,54 +454,51 @@
       <form (ngSubmit)="saveHorarioAssignment()">
         <div class="form-group">
           <label>Día de la Semana *</label>
-          <select
-            class="form-control"
+          <app-custom-select
+            [options]="diasSemanaOptions"
             [(ngModel)]="activeHorarioEdit.diaId"
-            (ngModelChange)="onDiaChange($event)"
+            (selectionChange)="onDiaChange($event)"
             name="diaId"
-            required
-          >
-            <option [ngValue]="1">Lunes</option>
-            <option [ngValue]="2">Martes</option>
-            <option [ngValue]="3">Miércoles</option>
-            <option [ngValue]="4">Jueves</option>
-            <option [ngValue]="5">Viernes</option>
-            <option [ngValue]="6">Sábado</option>
-            <option [ngValue]="7">Domingo</option>
-          </select>
+            placeholder="Seleccionar día de la semana..."
+            [searchable]="false"
+            [required]="true"
+          ></app-custom-select>
         </div>
 
         <!-- Selector de Cursos para Mañana -->
         <div class="form-group">
           <label>🌅 Turno Mañana (07:30 - 12:30) - Seleccionar Curso</label>
-          <select class="form-control" [(ngModel)]="activeHorarioEdit.cursoManana" name="cursoManana">
-            <option value="">-- Libre / Disponible --</option>
-            @for (c of cursosList(); track c.id) {
-              <option [value]="c.nombre">{{ c.nombre }}</option>
-            }
-          </select>
+          <app-custom-select
+            [options]="cursosHorarioOptions()"
+            [(ngModel)]="activeHorarioEdit.cursoManana"
+            name="cursoManana"
+            placeholder="Buscar o seleccionar curso..."
+            [searchable]="true"
+          ></app-custom-select>
         </div>
 
         <!-- Selector de Cursos para Tarde -->
         <div class="form-group">
           <label>☀️ Turno Tarde (13:00 - 17:30) - Seleccionar Curso</label>
-          <select class="form-control" [(ngModel)]="activeHorarioEdit.cursoTarde" name="cursoTarde">
-            <option value="">-- Libre / Disponible --</option>
-            @for (c of cursosList(); track c.id) {
-              <option [value]="c.nombre">{{ c.nombre }}</option>
-            }
-          </select>
+          <app-custom-select
+            [options]="cursosHorarioOptions()"
+            [(ngModel)]="activeHorarioEdit.cursoTarde"
+            name="cursoTarde"
+            placeholder="Buscar o seleccionar curso..."
+            [searchable]="true"
+          ></app-custom-select>
         </div>
 
         <!-- Selector de Cursos para Noche -->
         <div class="form-group">
           <label>🌙 Turno Noche (18:00 - 21:30) - Seleccionar Curso</label>
-          <select class="form-control" [(ngModel)]="activeHorarioEdit.cursoNoche" name="cursoNoche">
-            <option value="">-- Libre / Disponible --</option>
-            @for (c of cursosList(); track c.id) {
-              <option [value]="c.nombre">{{ c.nombre }}</option>
-            }
-          </select>
+          <app-custom-select
+            [options]="cursosHorarioOptions()"
+            [(ngModel)]="activeHorarioEdit.cursoNoche"
+            name="cursoNoche"
+            placeholder="Buscar o seleccionar curso..."
+            [searchable]="true"
+          ></app-custom-select>
         </div>
 
         <div class="modal-actions">
@@ -533,10 +530,14 @@
         <div class="form-row">
           <div class="form-group col-6">
             <label>Tipo de Espacio *</label>
-            <select class="form-control" [(ngModel)]="activeSalon.tipoSalon" name="tipoSalon" required>
-              <option [ngValue]="1">🏛️ Salón Teórico / Aula</option>
-              <option [ngValue]="0">⚡ Taller Práctico Técnico</option>
-            </select>
+            <app-custom-select
+              [options]="tipoEspacioOptions"
+              [(ngModel)]="activeSalon.tipoSalon"
+              name="tipoSalon"
+              placeholder="Seleccionar tipo..."
+              [searchable]="false"
+              [required]="true"
+            ></app-custom-select>
           </div>
           <div class="form-group col-6">
             <label>Capacidad (Personas) *</label>
@@ -554,32 +555,35 @@
 
         <div class="form-group">
           <label>Jornada Principal *</label>
-          <select class="form-control" [(ngModel)]="activeSalon.jornadaId" name="jornadaId">
-            <option [ngValue]="undefined">-- Seleccionar Jornada --</option>
-            @for (j of jornadasList(); track j.id) {
-              <option [ngValue]="j.id">{{ j.nombre }} ({{ j.horaInicio || j.horainicio || '07:30' }} - {{ j.horaFin || j.horafin || '12:30' }})</option>
-            }
-          </select>
+          <app-custom-select
+            [options]="jornadasOptions()"
+            [(ngModel)]="activeSalon.jornadaId"
+            name="jornadaId"
+            placeholder="Seleccionar jornada..."
+            [searchable]="true"
+          ></app-custom-select>
         </div>
 
         <div class="form-group">
           <label>Curso Asignado por Defecto</label>
-          <select class="form-control" [(ngModel)]="activeSalon.cursoId" name="cursoId">
-            <option [ngValue]="undefined">-- Ninguno / Sin Asignar --</option>
-            @for (c of cursosList(); track c.id) {
-              <option [ngValue]="c.id">{{ c.nombre }}</option>
-            }
-          </select>
+          <app-custom-select
+            [options]="cursosIdOptions()"
+            [(ngModel)]="activeSalon.cursoId"
+            name="cursoId"
+            placeholder="Seleccionar curso..."
+            [searchable]="true"
+          ></app-custom-select>
         </div>
 
         <div class="form-group">
           <label>Docente / Instructor Responsable</label>
-          <select class="form-control" [(ngModel)]="activeSalon.empleadoId" name="empleadoId">
-            <option [ngValue]="undefined">-- Sin Instructor Asignado --</option>
-            @for (e of empleadosList(); track e.id) {
-              <option [ngValue]="e.id">{{ e.nombres }} {{ e.apellidos }} ({{ e.profesion || 'Docente' }})</option>
-            }
-          </select>
+          <app-custom-select
+            [options]="empleadosOptions()"
+            [(ngModel)]="activeSalon.empleadoId"
+            name="empleadoId"
+            placeholder="Seleccionar instructor..."
+            [searchable]="true"
+          ></app-custom-select>
         </div>
 
         <div class="modal-actions">

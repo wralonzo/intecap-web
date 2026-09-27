@@ -238,28 +238,27 @@
           <!-- Tipo de Evento -->
           <div class="form-group">
             <label>Tipo de Evento Especial *</label>
-            <select class="form-control" [(ngModel)]="formRes.tipoEvento" name="tipoEvento" required>
-              <option value="Taller Especial">🔧 Taller Técnico Especial</option>
-              <option value="Seminario">🎓 Seminario / Conferencia</option>
-              <option value="Capacitación Empresarial">💼 Capacitación Empresarial</option>
-              <option value="Examen / Certificación">📝 Evaluación / Certificación</option>
-              <option value="Práctica de Laboratorio">🔬 Práctica de Laboratorio</option>
-              <option value="Reunión Institucional">🤝 Reunión Institucional / Evento</option>
-              <option value="Otro Evento">✨ Otro Evento Específico</option>
-            </select>
+            <app-custom-select
+              [options]="tipoEventoOptions"
+              [(ngModel)]="formRes.tipoEvento"
+              name="tipoEvento"
+              placeholder="Seleccionar tipo de evento..."
+              [searchable]="true"
+              [required]="true"
+            ></app-custom-select>
           </div>
 
           <!-- Salón o Taller -->
           <div class="form-group">
             <label>Espacio / Salón / Taller Solicitado *</label>
-            <select class="form-control" [(ngModel)]="formRes.salonId" name="salonId" required>
-              <option [ngValue]="null" disabled>-- Selecciona un espacio --</option>
-              @for (s of salonesList(); track s.id) {
-                <option [ngValue]="s.id">
-                  {{ s.title }} ({{ s.tipoSalon === 0 ? 'Taller' : 'Salón' }}) - Capacidad: {{ s.cantidadPersonas }} pax
-                </option>
-              }
-            </select>
+            <app-custom-select
+              [options]="salonesOptions()"
+              [(ngModel)]="formRes.salonId"
+              name="salonId"
+              placeholder="Seleccionar salón o taller..."
+              [searchable]="true"
+              [required]="true"
+            ></app-custom-select>
           </div>
 
           <!-- Fecha del Evento -->
@@ -299,36 +298,39 @@
           <!-- Instructor / Docente Responsable -->
           <div class="form-group">
             <label>Docente / Instructor Responsable *</label>
-            <select class="form-control" [(ngModel)]="formRes.empleadoId" name="empleadoId" required>
-              <option [ngValue]="null" disabled>-- Selecciona un instructor --</option>
-              @for (e of empleadosList(); track e.id) {
-                <option [ngValue]="e.id">
-                  {{ e.nombres }} {{ e.apellidos }} ({{ e.tipoEmpleado?.tipoEmpleado || 'Docente' }})
-                </option>
-              }
-            </select>
+            <app-custom-select
+              [options]="empleadosOptions()"
+              [(ngModel)]="formRes.empleadoId"
+              name="empleadoId"
+              placeholder="Seleccionar instructor..."
+              [searchable]="true"
+              [required]="true"
+            ></app-custom-select>
           </div>
 
           <!-- Curso / Tema -->
           <div class="form-group">
             <label>Curso o Especialidad Vinculada *</label>
-            <select class="form-control" [(ngModel)]="formRes.cursoId" name="cursoId" required>
-              <option [ngValue]="null" disabled>-- Selecciona un curso --</option>
-              @for (c of cursosList(); track c.id) {
-                <option [ngValue]="c.id">{{ c.nombre }}</option>
-              }
-            </select>
+            <app-custom-select
+              [options]="cursosOptions()"
+              [(ngModel)]="formRes.cursoId"
+              name="cursoId"
+              placeholder="Seleccionar curso..."
+              [searchable]="true"
+              [required]="true"
+            ></app-custom-select>
           </div>
 
           <!-- Jornada / Horario de Referencia -->
           <div class="form-group">
             <label>Jornada de Referencia</label>
-            <select class="form-control" [(ngModel)]="formRes.jornada" name="jornada">
-              <option value="Jornada Única">Jornada Única / Específica</option>
-              @for (j of jornadasList(); track j.id) {
-                <option [value]="j.nombre">{{ j.nombre }}</option>
-              }
-            </select>
+            <app-custom-select
+              [options]="jornadasOptions()"
+              [(ngModel)]="formRes.jornada"
+              name="jornada"
+              placeholder="Seleccionar jornada..."
+              [searchable]="false"
+            ></app-custom-select>
           </div>
 
           <!-- Cantidad de Personas -->

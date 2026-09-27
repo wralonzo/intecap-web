@@ -4,12 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { User, Empleado } from '../../core/models';
-import { PageHeaderComponent, ModalComponent, EmptyStateComponent } from '../../shared';
+import { PageHeaderComponent, ModalComponent, EmptyStateComponent, CustomSelectComponent, SelectOption } from '../../shared';
 
 @Component({
   selector: 'app-users-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, ModalComponent, EmptyStateComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, ModalComponent, EmptyStateComponent, CustomSelectComponent],
   templateUrl: './users-list.component.html',
   styleUrl: './users-list.component.scss',
 })
@@ -25,6 +25,26 @@ export class UsersListComponent implements OnInit {
   searchTerm = '';
   showModal = signal(false);
   isEditing = signal(false);
+
+  empleadosOptions = computed<SelectOption[]>(() => [
+    { value: null, label: '-- Sin vincular (Cuenta administrativa general) --' },
+    ...this.empleados().map((emp) => ({
+      value: emp.id,
+      label: `${emp.nombres} ${emp.apellidos}`,
+      subtitle: emp.tipoEmpleado?.name || emp.tipoEmpleado?.tipoEmpleado || 'Docente / Personal',
+      icon: '👤',
+    })),
+  ]);
+
+  staffOptions: SelectOption[] = [
+    { value: 0, label: 'Usuario Estándar (Docente / Instructor)', badge: 'Docente', badgeColor: 'blue' },
+    { value: 1, label: 'Administrador (Acceso total Staff)', badge: 'Staff', badgeColor: 'gold' },
+  ];
+
+  estadoOptions: SelectOption[] = [
+    { value: 1, label: 'Activo', badge: 'Activo', badgeColor: 'green' },
+    { value: 0, label: 'Inactivo / Bloqueado', badge: 'Inactivo', badgeColor: 'red' },
+  ];
 
   activeUser: any = {
     id: null,

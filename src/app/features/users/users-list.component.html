@@ -184,31 +184,36 @@
 
         <div class="form-group">
           <label>Vincular a Empleado / Docente</label>
-          <select class="form-control" [(ngModel)]="activeUser.empleadoId" name="empleadoId">
-            <option [ngValue]="null">-- Sin vincular (Cuenta administrativa general) --</option>
-            @for (emp of empleados(); track emp.id) {
-              <option [ngValue]="emp.id">
-                {{ emp.nombres }} {{ emp.apellidos }} ({{ emp.tipoEmpleado?.name || emp.tipoEmpleado?.tipoEmpleado || 'Docente' }})
-              </option>
-            }
-          </select>
+          <app-custom-select
+            [options]="empleadosOptions()"
+            [(ngModel)]="activeUser.empleadoId"
+            name="empleadoId"
+            placeholder="Seleccionar empleado o cuenta general..."
+            [searchable]="true"
+          ></app-custom-select>
         </div>
 
         <div class="form-row">
           <div class="form-group">
             <label>Nivel de Permisos</label>
-            <select class="form-control" [(ngModel)]="activeUser.staff" name="staff">
-              <option [value]="0">Usuario Estándar (Docente / Instructor)</option>
-              <option [value]="1">Administrador (Acceso total Staff)</option>
-            </select>
+            <app-custom-select
+              [options]="staffOptions"
+              [(ngModel)]="activeUser.staff"
+              name="staff"
+              placeholder="Seleccionar nivel..."
+              [searchable]="false"
+            ></app-custom-select>
           </div>
 
           <div class="form-group">
             <label>Estado de la Cuenta</label>
-            <select class="form-control" [(ngModel)]="activeUser.estado" name="estado">
-              <option [value]="1">Activo</option>
-              <option [value]="0">Inactivo / Bloqueado</option>
-            </select>
+            <app-custom-select
+              [options]="estadoOptions"
+              [(ngModel)]="activeUser.estado"
+              name="estado"
+              placeholder="Seleccionar estado..."
+              [searchable]="false"
+            ></app-custom-select>
           </div>
         </div>
 

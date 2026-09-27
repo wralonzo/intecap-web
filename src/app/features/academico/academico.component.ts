@@ -1,14 +1,14 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { Carrera, Curso, Jornada, Empleado } from '../../core/models';
-import { PageHeaderComponent, ModalComponent, EmptyStateComponent } from '../../shared';
+import { PageHeaderComponent, ModalComponent, EmptyStateComponent, CustomSelectComponent, SelectOption } from '../../shared';
 
 @Component({
   selector: 'app-academico',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, ModalComponent, EmptyStateComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, ModalComponent, EmptyStateComponent, CustomSelectComponent],
   templateUrl: './academico.component.html',
   styleUrl: './academico.component.scss',
 })
@@ -20,6 +20,28 @@ export class AcademicoComponent implements OnInit {
   jornadas = signal<Jornada[]>([]);
   empleados = signal<Empleado[]>([]);
   activeModal = signal<'carrera' | 'curso' | 'jornada' | null>(null);
+
+  carrerasOptions = computed<SelectOption[]>(() => [
+    { value: null, label: 'Ninguna (Curso Libre)', icon: '📚' },
+    ...this.carreras().map((c) => ({
+      value: c.id,
+      label: c.nombre,
+      subtitle: c.codigo ? `Código: ${c.codigo}` : undefined,
+      icon: '🎓'
+    }))
+  ]);
+
+  empleadosOptions = computed<SelectOption[]>(() => [
+    { value: null, label: 'Sin Catedrático Asignado', icon: '👤' },
+    ...this.empleados().map((emp) => ({
+      value: emp.id,
+      label: `${emp.nombres} ${emp.apellidos}`,
+      subtitle: emp.profesion || 'Docente / Instructor',
+      icon: '👨‍🏫',
+      badge: emp.staff ? 'Personal' : undefined,
+      badgeColor: 'blue' as const
+    }))
+  ]);
 
   // Carrera Form
   editingCarreraId: number | null = null;

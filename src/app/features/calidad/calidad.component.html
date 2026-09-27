@@ -339,12 +339,14 @@
               <div class="form-grid-layout">
                 <div class="form-group col-12 col-md-6">
                   <label>Instructor / Docente a Evaluar *</label>
-                  <select class="form-control" [(ngModel)]="activeEval.empleadoId" name="empleadoId" required>
-                    <option [ngValue]="null" disabled>Selecciona un docente</option>
-                    @for (e of empleados(); track e.id) {
-                      <option [ngValue]="e.id">{{ e.nombres }} {{ e.apellidos }} ({{ e.profesion || 'Docente' }})</option>
-                    }
-                  </select>
+                  <app-custom-select
+                    [options]="empleadosOptions()"
+                    [(ngModel)]="activeEval.empleadoId"
+                    name="empleadoId"
+                    placeholder="Seleccionar docente a evaluar..."
+                    [searchable]="true"
+                    [required]="true"
+                  ></app-custom-select>
                 </div>
 
                 <div class="form-group col-12 col-md-6">
@@ -374,12 +376,13 @@
 
                 <div class="form-group col-12 col-md-6">
                   <label>Producto de Formación</label>
-                  <select class="form-control" [(ngModel)]="activeEval.productoFormacion" name="productoFormacion">
-                    <option value="Guía Didáctica de Aprendizaje">Guía Didáctica de Aprendizaje</option>
-                    <option value="Plan de Sesión Formativa">Plan de Sesión Formativa</option>
-                    <option value="Evaluación Práctica de Taller">Evaluación Práctica de Taller</option>
-                    <option value="Manual de Procedimientos Técnicos">Manual de Procedimientos Técnicos</option>
-                  </select>
+                  <app-custom-select
+                    [options]="productoFormacionOptions"
+                    [(ngModel)]="activeEval.productoFormacion"
+                    name="productoFormacion"
+                    placeholder="Seleccionar producto de formación..."
+                    [searchable]="false"
+                  ></app-custom-select>
                 </div>
 
                 <div class="form-group col-12 col-md-3">
