@@ -74,6 +74,7 @@
                 <th>ID</th>
                 <th>Nombre Completo</th>
                 <th>Puesto del Empleado</th>
+                <th>Usuario de Acceso</th>
                 <th>Correo Electrónico</th>
                 <th>Teléfono</th>
                 <th>Estado</th>
@@ -97,6 +98,20 @@
                     <span class="puesto-tag">
                       💼 {{ getPuestoName(e.tipoEmpleadoId) }}
                     </span>
+                  </td>
+                  <td>
+                    @if (e.user) {
+                      <span class="user-badge has-user" title="Cuenta asignada con ID #{{ e.user.id }}">
+                        👤 @{{ e.user.username }}
+                        @if (e.user.staff === 1) {
+                          <span class="badge-staff-mini" title="Administrador Staff">★ Admin</span>
+                        }
+                      </span>
+                    } @else {
+                      <span class="user-badge no-user">
+                        ⚠️ Sin cuenta
+                      </span>
+                    }
                   </td>
                   <td>{{ e.email || '-' }}</td>
                   <td>{{ e.telefono || '-' }}</td>
@@ -195,6 +210,7 @@
               class="form-control"
               placeholder="Ej: Juan Carlos"
               [(ngModel)]="activeEmp.nombres"
+              (ngModelChange)="onNombreEmailChange()"
               name="nombres"
               required
             />
@@ -206,6 +222,7 @@
               class="form-control"
               placeholder="Ej: Pérez Gómez"
               [(ngModel)]="activeEmp.apellidos"
+              (ngModelChange)="onNombreEmailChange()"
               name="apellidos"
               required
             />
@@ -229,6 +246,7 @@
               class="form-control"
               placeholder="ejemplo@intecap.edu.gt"
               [(ngModel)]="activeEmp.email"
+              (ngModelChange)="onNombreEmailChange()"
               name="email"
             />
           </div>
@@ -253,6 +271,75 @@
             [(ngModel)]="activeEmp.direccion"
             name="direccion"
           />
+        </div>
+
+        <!-- Checkbox / Box Interactivo para Crear Usuario de Acceso -->
+        <div class="user-account-box" [class.active]="activeEmp.crearUsuario">
+          <label class="user-check-header">
+            <input
+              type="checkbox"
+              [(ngModel)]="activeEmp.crearUsuario"
+              (change)="onNombreEmailChange()"
+              name="crearUsuario"
+            />
+            <div>
+              <div class="check-title">🔐 {{ isEditingEmp() ? (activeEmp.user ? 'Cuenta de usuario vinculada' : 'Crear cuenta de acceso para este empleado') : '¿Crear cuenta de usuario para este empleado?' }}</div>
+              <div class="check-subtitle">
+                {{ activeEmp.crearUsuario ? 'Se generarán credenciales de inicio de sesión en el sistema' : 'Marcar si deseas habilitar acceso al portal para este empleado' }}
+              </div>
+            </div>
+          </label>
+
+          @if (activeEmp.crearUsuario && (!isEditingEmp() || !activeEmp.user)) {
+            <div class="user-fields-grid">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Nombre de Usuario *</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    placeholder="Ej: juan.perez"
+                    [(ngModel)]="activeEmp.username"
+                    (input)="activeEmp.usernameManuallyEdited = true"
+                    name="username"
+                    required
+                  />
+                  <small class="text-xs text-muted">Nombre único para inicio de sesión</small>
+                </div>
+                <div class="form-group">
+                  <label>Contraseña de Acceso</label>
+                  <div class="password-input-group">
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder="Intecap2026*"
+                      [(ngModel)]="activeEmp.password"
+                      name="password"
+                    />
+                    <button type="button" class="btn-gen-pass" (click)="generateRandomPassword()" title="Generar clave aleatoria">
+                      🎲 Generar
+                    </button>
+                  </div>
+                  <small class="text-xs text-muted">Por defecto: <strong>Intecap2026*</strong></small>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Nivel de Permisos / Rol</label>
+                <select class="form-control" [(ngModel)]="activeEmp.staff" name="staff">
+                  <option [value]="0">Docente / Empleado Estándar (Acceso a sus cursos, horario y perfil)</option>
+                  <option [value]="1">Administrador Staff (Acceso completo a gestión del sistema)</option>
+                </select>
+              </div>
+            </div>
+          } @else if (isEditingEmp() && activeEmp.user) {
+            <div class="user-already-linked">
+              <span>👤 Usuario actual: <strong>@{{ activeEmp.user.username }}</strong></span>
+              <span class="badge" [class.badge-success]="activeEmp.user.estado === 1" [class.badge-danger]="activeEmp.user.estado === 0">
+                {{ activeEmp.user.estado === 1 ? 'Activo' : 'Inactivo' }}
+              </span>
+            </div>
+          }
         </div>
 
         <div class="modal-actions">

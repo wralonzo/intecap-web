@@ -32,6 +32,11 @@ export interface Empleado {
   tipoEmpleado?: TipoEmpleado;
   profesion?: string;
   estado: number;
+  user?: User;
+  crearUsuario?: boolean;
+  username?: string;
+  password?: string;
+  staff?: number;
 }
 
 export interface Salon {

@@ -96,18 +96,51 @@ export class EmpleadosListComponent implements OnInit {
       telefono: '',
       direccion: '',
       tipoEmpleadoId: this.puestos()[0]?.id || 1,
+      crearUsuario: true,
+      username: '',
+      password: '',
+      staff: 0,
+      usernameManuallyEdited: false,
     };
     this.showEmpModal.set(true);
   }
 
   editEmpleado(emp: Empleado): void {
     this.isEditingEmp.set(true);
-    this.activeEmp = { ...emp };
+    this.activeEmp = {
+      ...emp,
+      crearUsuario: false,
+      username: emp.user?.username || '',
+      password: '',
+      staff: emp.user?.staff ?? 0,
+      usernameManuallyEdited: false,
+    };
     this.showEmpModal.set(true);
   }
 
   closeEmpleadoModal(): void {
     this.showEmpModal.set(false);
+  }
+
+  onNombreEmailChange(): void {
+    if (this.activeEmp.crearUsuario && !this.activeEmp.usernameManuallyEdited) {
+      if (this.activeEmp.email && this.activeEmp.email.includes('@')) {
+        this.activeEmp.username = this.activeEmp.email.split('@')[0].toLowerCase();
+      } else if (this.activeEmp.nombres || this.activeEmp.apellidos) {
+        const first = (this.activeEmp.nombres || '').trim().split(' ')[0].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const last = (this.activeEmp.apellidos || '').trim().split(' ')[0].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        this.activeEmp.username = first && last ? `${first}.${last}` : (first || last || '');
+      }
+    }
+  }
+
+  generateRandomPassword(): void {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+    let pass = 'Intecap!';
+    for (let i = 0; i < 4; i++) {
+      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    this.activeEmp.password = pass;
   }
 
   saveEmpleado(): void {
