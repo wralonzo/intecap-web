@@ -27,10 +27,10 @@ jobs:
       - name: Checkout del Repositorio
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js 24
+      - name: Configurar Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: './package-lock.json'
 
@@ -38,7 +38,7 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: Verificar Compilación Angular (Producción)
-        run: npm run build --configuration=production
+        run: npm run build
 
   # STAGE 2: Despliegue en VPS (Manual vía workflow_dispatch o Push a main)
   deploy-vps:
@@ -56,6 +56,7 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
+            set -e
             TARGET_ENV="${{ inputs.environment || 'prod' }}"
             BRANCH="${{ github.ref_name }}"
             echo "🎛️ Despliegue de Frontend INTECAP activado para el ambiente: $TARGET_ENV (Rama: $BRANCH)"
@@ -82,7 +83,7 @@ jobs:
             # 4. Reconstruir y levantar el contenedor del frontend Angular con Docker Compose
             docker compose up -d --build --no-deps intecap-web
 
-            # 5. Limpieza de imágenes dangling/huérfanas
+            # 5. Limpieza de imágenes huérfanas
             docker image prune -f
 
             echo "✅ ¡Frontend intecap-web desplegado exitosamente en https://intecap.appgtmobile.online!"
