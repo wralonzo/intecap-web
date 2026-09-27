@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
 import { Empleado, TipoEmpleado } from '../../core/models';
 import { PageHeaderComponent, ModalComponent, EmptyStateComponent } from '../../shared';
 
@@ -14,6 +15,7 @@ import { PageHeaderComponent, ModalComponent, EmptyStateComponent } from '../../
 })
 export class EmpleadosListComponent implements OnInit {
   private apiService = inject(ApiService);
+  private toast = inject(ToastService);
 
   activeTab = signal<'empleados' | 'puestos'>('empleados');
   empleados = signal<Empleado[]>([]);
@@ -148,7 +150,7 @@ export class EmpleadosListComponent implements OnInit {
   saveEmpleado(): void {
     if (this.isSaving()) return;
     if (!this.activeEmp.nombres || !this.activeEmp.apellidos) {
-      alert('Por favor completa los nombres y apellidos del empleado.');
+      this.toast.warning('Campos requeridos', 'Por favor completa los nombres y apellidos del empleado.');
       return;
     }
 
@@ -158,18 +160,26 @@ export class EmpleadosListComponent implements OnInit {
         next: () => {
           this.isSaving.set(false);
           this.closeEmpleadoModal();
+          this.toast.success('Empleado actualizado', 'Información del colaborador guardada exitosamente.');
           this.loadEmpleados();
         },
-        error: () => this.isSaving.set(false),
+        error: (err) => {
+          this.isSaving.set(false);
+          this.toast.error('Error', err.error?.message || 'Error al actualizar colaborador');
+        },
       });
     } else {
       this.apiService.createEmpleado(this.activeEmp).subscribe({
         next: () => {
           this.isSaving.set(false);
           this.closeEmpleadoModal();
+          this.toast.success('Empleado registrado', 'Nuevo colaborador registrado exitosamente.');
           this.loadEmpleados();
         },
-        error: () => this.isSaving.set(false),
+        error: (err) => {
+          this.isSaving.set(false);
+          this.toast.error('Error', err.error?.message || 'Error al registrar colaborador');
+        },
       });
     }
   }
@@ -177,7 +187,11 @@ export class EmpleadosListComponent implements OnInit {
   deleteEmpleado(id: number): void {
     if (!confirm(`¿Estás seguro de desactivar al empleado #${id}?`)) return;
     this.apiService.deleteEmpleado(id).subscribe({
-      next: () => this.loadEmpleados(),
+      next: () => {
+        this.toast.info('Empleado desactivado', `El colaborador #${id} fue desactivado.`);
+        this.loadEmpleados();
+      },
+      error: (err) => this.toast.error('Error', err.error?.message || 'Error al desactivar empleado'),
     });
   }
 
@@ -200,7 +214,7 @@ export class EmpleadosListComponent implements OnInit {
 
   savePuesto(): void {
     if (!this.activePuesto.name.trim()) {
-      alert('Por favor ingresa el nombre del puesto del empleado.');
+      this.toast.warning('Campo requerido', 'Por favor ingresa el nombre del puesto del empleado.');
       return;
     }
 
@@ -208,15 +222,19 @@ export class EmpleadosListComponent implements OnInit {
       this.apiService.updatePuesto(this.activePuesto.id, { name: this.activePuesto.name }).subscribe({
         next: () => {
           this.closePuestoModal();
+          this.toast.success('Puesto actualizado', 'Puesto modificado con éxito.');
           this.loadData();
         },
+        error: (err) => this.toast.error('Error', err.error?.message || 'Error al modificar puesto'),
       });
     } else {
       this.apiService.createPuesto({ name: this.activePuesto.name }).subscribe({
         next: () => {
           this.closePuestoModal();
+          this.toast.success('Puesto creado', 'Nuevo puesto registrado con éxito.');
           this.loadData();
         },
+        error: (err) => this.toast.error('Error', err.error?.message || 'Error al registrar puesto'),
       });
     }
   }
@@ -224,7 +242,11 @@ export class EmpleadosListComponent implements OnInit {
   deletePuesto(id: number): void {
     if (!confirm(`¿Estás seguro de desactivar este puesto del empleado?`)) return;
     this.apiService.deletePuesto(id).subscribe({
-      next: () => this.loadData(),
+      next: () => {
+        this.toast.info('Puesto desactivado', `El puesto #${id} fue desactivado.`);
+        this.loadData();
+      },
+      error: (err) => this.toast.error('Error', err.error?.message || 'Error al desactivar puesto'),
     });
   }
 }

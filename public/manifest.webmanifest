@@ -1,0 +1,21 @@
+{
+  "name": "INTECAP - Sistema de Gestión y TV Kiosko",
+  "short_name": "INTECAP TV",
+  "description": "Sistema de gestión académica, inventario y panel interactivo en tiempo real para salones y talleres INTECAP",
+  "start_url": "/tv",
+  "scope": "/",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone", "window-controls-overlay"],
+  "orientation": "landscape",
+  "background_color": "#001a3d",
+  "theme_color": "#002f6c",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["education", "productivity", "utilities"],
+  "lang": "es-GT"
+}

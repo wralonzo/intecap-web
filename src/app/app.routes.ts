@@ -12,6 +12,7 @@ import { AvisosComponent } from './features/avisos/avisos.component';
 import { UsersListComponent } from './features/users/users-list.component';
 import { TvDisplayComponent } from './features/tv-display/tv-display.component';
 import { authGuard } from './core/guards/auth.guard';
+import { roleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   {
@@ -41,38 +42,56 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         component: DashboardComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN', 'DOCENTE', 'BODEGA'] },
       },
       {
         path: 'salones',
         component: SalonesListComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN', 'DOCENTE'] },
       },
       {
         path: 'reservaciones',
         component: ReservacionesComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN', 'DOCENTE'] },
       },
       {
         path: 'avisos',
         component: AvisosComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN', 'DOCENTE'] },
       },
       {
         path: 'empleados',
         component: EmpleadosListComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] },
       },
       {
         path: 'academico',
         component: AcademicoComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN', 'DOCENTE'] },
       },
       {
         path: 'usuarios',
         component: UsersListComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] },
       },
       {
         path: 'inventario',
         component: InventarioComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN', 'BODEGA'] },
       },
       {
         path: 'calidad',
         component: CalidadComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN', 'DOCENTE'] },
       },
     ],
   },

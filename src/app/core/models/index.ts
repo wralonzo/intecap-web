@@ -1,9 +1,12 @@
+export type UserRole = 'ADMIN' | 'DOCENTE' | 'BODEGA';
+
 export interface User {
   id: number;
   username: string;
   password?: string;
   empleadoId?: number | null;
   staff: number;
+  role?: UserRole;
   estado?: number;
   empleado?: Empleado | null;
 }
@@ -211,6 +214,7 @@ export interface ControlCalidad {
 
   // Puntuación General
   promedio: number;
+  punteoTotal?: number;
   declaracionEstado?: string;
   observaciones?: string;
   compromisosDocente?: string;

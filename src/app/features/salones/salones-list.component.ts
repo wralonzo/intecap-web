@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { WebSocketService } from '../../core/services/websocket.service';
+import { ToastService } from '../../core/services/toast.service';
+import { exportToCsv, printHtmlReport } from '../../core/utils/export.util';
 import {
   Salon,
   SalonMatrizHorario,
@@ -24,6 +26,7 @@ export class SalonesListComponent implements OnInit {
   private readonly api = inject(ApiService);
   private readonly ws = inject(WebSocketService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly toast = inject(ToastService);
 
   activeView = signal<'realtime' | 'matriz' | 'catalogo' | 'jornadas'>('realtime');
   loading = signal(true);
@@ -227,7 +230,7 @@ export class SalonesListComponent implements OnInit {
 
   saveSalon() {
     if (!this.activeSalon.title) {
-      alert('Por favor ingresa el nombre del espacio.');
+      this.toast.warning('Campo requerido', 'Por favor ingresa el nombre del espacio.');
       return;
     }
 
@@ -237,18 +240,26 @@ export class SalonesListComponent implements OnInit {
         next: () => {
           this.saving.set(false);
           this.closeSalonModal();
+          this.toast.success('Espacio actualizado', 'Salón / Taller guardado correctamente.');
           this.loadSalones();
         },
-        error: () => this.saving.set(false),
+        error: (err) => {
+          this.saving.set(false);
+          this.toast.error('Error', err.error?.message || 'Error al actualizar espacio');
+        },
       });
     } else {
       this.api.createSalon(this.activeSalon).subscribe({
         next: () => {
           this.saving.set(false);
           this.closeSalonModal();
+          this.toast.success('Espacio creado', 'Nuevo salón o taller registrado.');
           this.loadSalones();
         },
-        error: () => this.saving.set(false),
+        error: (err) => {
+          this.saving.set(false);
+          this.toast.error('Error', err.error?.message || 'Error al crear espacio');
+        },
       });
     }
   }
@@ -256,7 +267,11 @@ export class SalonesListComponent implements OnInit {
   deleteSalon(id: number) {
     if (!confirm(`¿Estás seguro de eliminar el espacio #${id}?`)) return;
     this.api.deleteSalon(id).subscribe({
-      next: () => this.loadSalones(),
+      next: () => {
+        this.toast.info('Espacio eliminado', `El salón #${id} ha sido desactivado.`);
+        this.loadSalones();
+      },
+      error: (err) => this.toast.error('Error', err.error?.message || 'Error al eliminar salón'),
     });
   }
 
@@ -368,13 +383,15 @@ export class SalonesListComponent implements OnInit {
         next: () => {
           this.saving.set(false);
           this.closeHorarioModal();
+          this.toast.success('Horario actualizado', 'La asignación de cursos para este día fue guardada.');
           this.loadRealtime();
           this.loadMatriz();
           this.loadSalones();
           this.cdr.markForCheck();
         },
-        error: () => {
+        error: (err) => {
           this.saving.set(false);
+          this.toast.error('Error', err.error?.message || 'Error al guardar horario');
           this.cdr.markForCheck();
         },
       });
@@ -392,7 +409,7 @@ export class SalonesListComponent implements OnInit {
 
   saveJornada() {
     if (!this.newJornada.nombre) {
-      alert('Por favor ingresa el nombre de la jornada.');
+      this.toast.warning('Campo requerido', 'Por favor ingresa el nombre de la jornada.');
       return;
     }
 
@@ -401,9 +418,97 @@ export class SalonesListComponent implements OnInit {
       next: () => {
         this.saving.set(false);
         this.showJornadaModal.set(false);
+        this.toast.success('Jornada creada', 'Nueva jornada académica registrada con éxito.');
         this.loadCatalogs();
       },
-      error: () => this.saving.set(false),
+      error: (err) => {
+        this.saving.set(false);
+        this.toast.error('Error', err.error?.message || 'Error al crear jornada');
+      },
     });
+  }
+
+  // ================= EXPORTS =================
+  exportMatrizExcel(): void {
+    const data = this.matrizData();
+    if (!data.length) {
+      this.toast.warning('Sin datos', 'No hay registros en la matriz para exportar.');
+      return;
+    }
+
+    const rows = data.map((item) => {
+      const getTurnos = (turnos: any) =>
+        `M: ${turnos?.manana || '-'} | T: ${turnos?.tarde || '-'} | N: ${turnos?.noche || '-'}`;
+
+      return {
+        'Espacio / Salón': item.salon.title,
+        'Tipo': item.salon.tipoSalon === 1 ? 'Salón Teórico' : 'Taller Práctico',
+        'Capacidad': `${item.salon.cantidadPersonas || 0} personas`,
+        'Lunes': getTurnos(item.dias.lunes),
+        'Martes': getTurnos(item.dias.martes),
+        'Miércoles': getTurnos(item.dias.miercoles),
+        'Jueves': getTurnos(item.dias.jueves),
+        'Viernes': getTurnos(item.dias.viernes),
+        'Sábado': getTurnos(item.dias.sabado),
+        'Domingo': getTurnos(item.dias.domingo),
+      };
+    });
+
+    exportToCsv(rows, 'Matriz_Semanal_Salones_INTECAP');
+    this.toast.success('Descarga exitosa', 'Matriz semanal exportada a Excel (.xlsx/csv).');
+  }
+
+  exportMatrizPdf(): void {
+    const data = this.matrizData();
+    if (!data.length) {
+      this.toast.warning('Sin datos', 'No hay registros en la matriz para exportar.');
+      return;
+    }
+
+    const getTurnoHtml = (t: any) => `
+      <div style="font-size: 8px; line-height: 1.2;">
+        <strong>M:</strong> ${t?.manana || '-'}<br/>
+        <strong>T:</strong> ${t?.tarde || '-'}<br/>
+        <strong>N:</strong> ${t?.noche || '-'}
+      </div>
+    `;
+
+    let rowsHtml = '';
+    data.forEach((item) => {
+      rowsHtml += `
+        <tr>
+          <td><strong>${item.salon.title}</strong><br/><small>${item.salon.tipoSalon === 1 ? 'Salón' : 'Taller'} (${item.salon.cantidadPersonas} pers.)</small></td>
+          <td>${getTurnoHtml(item.dias.lunes)}</td>
+          <td>${getTurnoHtml(item.dias.martes)}</td>
+          <td>${getTurnoHtml(item.dias.miercoles)}</td>
+          <td>${getTurnoHtml(item.dias.jueves)}</td>
+          <td>${getTurnoHtml(item.dias.viernes)}</td>
+          <td>${getTurnoHtml(item.dias.sabado)}</td>
+          <td>${getTurnoHtml(item.dias.domingo)}</td>
+        </tr>
+      `;
+    });
+
+    const bodyHtml = `
+      <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
+        <thead>
+          <tr style="background-color: #002f6c; color: white;">
+            <th style="padding: 6px; border: 1px solid #ccc;">Espacio</th>
+            <th style="padding: 6px; border: 1px solid #ccc;">Lunes</th>
+            <th style="padding: 6px; border: 1px solid #ccc;">Martes</th>
+            <th style="padding: 6px; border: 1px solid #ccc;">Miércoles</th>
+            <th style="padding: 6px; border: 1px solid #ccc;">Jueves</th>
+            <th style="padding: 6px; border: 1px solid #ccc;">Viernes</th>
+            <th style="padding: 6px; border: 1px solid #ccc;">Sábado</th>
+            <th style="padding: 6px; border: 1px solid #ccc;">Domingo</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+    `;
+
+    printHtmlReport('MATRIZ SEMANAL DE SALONES Y HORARIOS', bodyHtml);
   }
 }

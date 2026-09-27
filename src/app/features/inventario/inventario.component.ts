@@ -2,8 +2,10 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
-import { Mobiliario, Item } from '../../core/models';
+import { ToastService } from '../../core/services/toast.service';
+import { Mobiliario, Suministro } from '../../core/models';
 import { PageHeaderComponent, ModalComponent, EmptyStateComponent } from '../../shared';
+import { exportToCsv, printHtmlReport } from '../../core/utils/export.util';
 
 @Component({
   selector: 'app-inventario',
@@ -14,15 +16,17 @@ import { PageHeaderComponent, ModalComponent, EmptyStateComponent } from '../../
 })
 export class InventarioComponent implements OnInit {
   private apiService = inject(ApiService);
+  private toast = inject(ToastService);
 
   mobiliario = signal<Mobiliario[]>([]);
-  items = signal<Item[]>([]);
+  items = signal<Suministro[]>([]);
   activeModal = signal<'mob' | 'item' | null>(null);
 
   editingId: number | null = null;
   name = '';
   quantity = 1;
   desc = '';
+  isSaving = signal(false);
 
   ngOnInit(): void {
     this.loadAll();
@@ -58,7 +62,7 @@ export class InventarioComponent implements OnInit {
     this.activeModal.set('mob'); 
   }
 
-  openItemModal(item?: Item): void { 
+  openItemModal(item?: Suministro): void { 
     if (item) {
       this.editingId = item.id;
       this.name = item.nombre;
@@ -78,16 +82,17 @@ export class InventarioComponent implements OnInit {
     this.editingId = null;
   }
 
-  isSaving = signal(false);
-
   saveItem(): void {
     if (this.isSaving()) return;
-    if (!this.name) return;
+    if (!this.name.trim()) {
+      this.toast.warning('Por favor ingrese el nombre del artículo.');
+      return;
+    }
 
     this.isSaving.set(true);
     if (this.activeModal() === 'mob') {
       const payload: Partial<Mobiliario> = {
-        nombre: this.name,
+        nombre: this.name.trim(),
         cantidad: this.quantity,
         descripcion: this.desc || undefined,
       };
@@ -96,24 +101,32 @@ export class InventarioComponent implements OnInit {
         this.apiService.updateMobiliario(this.editingId, payload).subscribe({
           next: () => {
             this.isSaving.set(false);
+            this.toast.success(`Mobiliario "${payload.nombre}" actualizado correctamente.`);
             this.closeModal();
             this.loadAll();
           },
-          error: () => this.isSaving.set(false),
+          error: (err) => {
+            this.isSaving.set(false);
+            this.toast.error('Error al actualizar mobiliario: ' + (err.error?.message || err.message));
+          },
         });
       } else {
         this.apiService.createMobiliario(payload).subscribe({
           next: () => {
             this.isSaving.set(false);
+            this.toast.success(`Mobiliario "${payload.nombre}" registrado exitosamente.`);
             this.closeModal();
             this.loadAll();
           },
-          error: () => this.isSaving.set(false),
+          error: (err) => {
+            this.isSaving.set(false);
+            this.toast.error('Error al registrar mobiliario: ' + (err.error?.message || err.message));
+          },
         });
       }
     } else if (this.activeModal() === 'item') {
-      const payload: Partial<Item> = {
-        nombre: this.name,
+      const payload: Partial<Suministro> = {
+        nombre: this.name.trim(),
         cantidad: this.quantity,
         descripcion: this.desc || undefined,
       };
@@ -122,19 +135,27 @@ export class InventarioComponent implements OnInit {
         this.apiService.updateItem(this.editingId, payload).subscribe({
           next: () => {
             this.isSaving.set(false);
+            this.toast.success(`Suministro "${payload.nombre}" actualizado correctamente.`);
             this.closeModal();
             this.loadAll();
           },
-          error: () => this.isSaving.set(false),
+          error: (err) => {
+            this.isSaving.set(false);
+            this.toast.error('Error al actualizar suministro: ' + (err.error?.message || err.message));
+          },
         });
       } else {
         this.apiService.createItem(payload).subscribe({
           next: () => {
             this.isSaving.set(false);
+            this.toast.success(`Suministro "${payload.nombre}" registrado exitosamente.`);
             this.closeModal();
             this.loadAll();
           },
-          error: () => this.isSaving.set(false),
+          error: (err) => {
+            this.isSaving.set(false);
+            this.toast.error('Error al registrar suministro: ' + (err.error?.message || err.message));
+          },
         });
       }
     }
@@ -142,17 +163,71 @@ export class InventarioComponent implements OnInit {
 
   deleteMobiliario(mob: Mobiliario): void {
     if (confirm(`¿Está seguro de eliminar el mobiliario "${mob.nombre}"?`)) {
-      this.apiService.deleteMobiliario(mob.id).subscribe(() => {
-        this.loadAll();
+      this.apiService.deleteMobiliario(mob.id).subscribe({
+        next: () => {
+          this.toast.success(`Mobiliario "${mob.nombre}" eliminado.`);
+          this.loadAll();
+        },
+        error: () => this.toast.error('Error al eliminar mobiliario.'),
       });
     }
   }
 
-  deleteItem(item: Item): void {
+  deleteItem(item: Suministro): void {
     if (confirm(`¿Está seguro de eliminar el artículo "${item.nombre}"?`)) {
-      this.apiService.deleteItem(item.id).subscribe(() => {
-        this.loadAll();
+      this.apiService.deleteItem(item.id).subscribe({
+        next: () => {
+          this.toast.success(`Suministro "${item.nombre}" eliminado.`);
+          this.loadAll();
+        },
+        error: () => this.toast.error('Error al eliminar suministro.'),
       });
     }
+  }
+
+  // Exportar Inventario Completo a Excel
+  exportExcel(): void {
+    const rows: any[][] = [];
+
+    // Header section mobiliario
+    rows.push(['TIPO', 'ID', 'NOMBRE', 'CANTIDAD', 'DESCRIPCION']);
+    for (const m of this.mobiliario()) {
+      rows.push(['Mobiliario/Equipo', m.id, m.nombre, m.cantidad, m.descripcion || '']);
+    }
+
+    // Section suministros
+    for (const s of this.items()) {
+      rows.push(['Suministro/Articulo', s.id, s.nombre, s.cantidad, s.descripcion || '']);
+    }
+
+    exportToCsv('Reporte_Inventario_INTECAP', rows, ['Categoría', 'ID', 'Artículo / Equipo', 'Cantidad Disponible', 'Descripción']);
+    this.toast.success('Archivo Excel (.csv) descargado correctamente.');
+  }
+
+  // Exportar Reporte Impreso/PDF
+  exportPdf(): void {
+    let table = `
+      <h3>1. Mobiliario y Equipamiento Pedagógico</h3>
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Nombre</th><th>Cantidad</th><th>Descripción</th></tr>
+        </thead>
+        <tbody>
+          ${this.mobiliario().map(m => `<tr><td>#${m.id}</td><td><strong>${m.nombre}</strong></td><td>${m.cantidad} u.</td><td>${m.descripcion || '-'}</td></tr>`).join('')}
+        </tbody>
+      </table>
+
+      <h3 style="margin-top: 1.5rem;">2. Suministros y Artículos de Bodega</h3>
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Nombre</th><th>Cantidad</th><th>Descripción</th></tr>
+        </thead>
+        <tbody>
+          ${this.items().map(s => `<tr><td>#${s.id}</td><td><strong>${s.nombre}</strong></td><td>${s.cantidad} u.</td><td>${s.descripcion || '-'}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    `;
+
+    printHtmlReport('Reporte General de Inventario y Mobiliario', table, 'Mobiliario asignado y existencias en bodega');
   }
 }

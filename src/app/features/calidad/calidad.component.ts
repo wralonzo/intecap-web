@@ -2,6 +2,8 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
+import { exportToCsv, printHtmlReport } from '../../core/utils/export.util';
 import { ControlCalidad, Empleado, CalidadEstadisticas } from '../../core/models';
 import { PageHeaderComponent, EmptyStateComponent } from '../../shared';
 
@@ -14,6 +16,7 @@ import { PageHeaderComponent, EmptyStateComponent } from '../../shared';
 })
 export class CalidadComponent implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly toast = inject(ToastService);
 
   currentView = signal<'list' | 'form' | 'report'>('list');
   evaluaciones = signal<ControlCalidad[]>([]);
@@ -274,7 +277,7 @@ export class CalidadComponent implements OnInit {
 
   saveEvaluacion() {
     if (!this.activeEval.empleadoId) {
-      alert('Por favor selecciona un docente.');
+      this.toast.warning('Docente requerido', 'Por favor selecciona un docente para la evaluación.');
       return;
     }
 
@@ -285,18 +288,26 @@ export class CalidadComponent implements OnInit {
         next: () => {
           this.saving.set(false);
           this.backToList();
+          this.toast.success('Evaluación actualizada', 'La evaluación de calidad ha sido modificada con éxito.');
           this.loadData();
         },
-        error: () => this.saving.set(false),
+        error: (err) => {
+          this.saving.set(false);
+          this.toast.error('Error', err.error?.message || 'Error al actualizar evaluación');
+        },
       });
     } else {
       this.api.createCalidad(this.activeEval).subscribe({
         next: () => {
           this.saving.set(false);
           this.backToList();
+          this.toast.success('Evaluación registrada', 'Nueva evaluación de calidad guardada con éxito.');
           this.loadData();
         },
-        error: () => this.saving.set(false),
+        error: (err) => {
+          this.saving.set(false);
+          this.toast.error('Error', err.error?.message || 'Error al crear evaluación');
+        },
       });
     }
   }
@@ -305,7 +316,11 @@ export class CalidadComponent implements OnInit {
     if (!confirm(`¿Estás seguro de eliminar la evaluación #${id}?`)) return;
 
     this.api.deleteCalidad(id).subscribe({
-      next: () => this.loadData(),
+      next: () => {
+        this.toast.info('Evaluación eliminada', `La evaluación #${id} fue eliminada.`);
+        this.loadData();
+      },
+      error: (err) => this.toast.error('Error', err.error?.message || 'Error al eliminar evaluación'),
     });
   }
 
@@ -344,5 +359,87 @@ export class CalidadComponent implements OnInit {
 
   printFicha() {
     window.print();
+  }
+
+  exportExcel(): void {
+    const data = this.evaluaciones();
+    if (!data.length) {
+      this.toast.warning('Sin datos', 'No hay evaluaciones de calidad para exportar.');
+      return;
+    }
+
+    const rows = data.map((ev) => {
+      const docente = ev.empleado ? `${ev.empleado.nombres} ${ev.empleado.apellidos}` : 'No especificado';
+      const puesto = ev.empleado?.tipoEmpleado?.tipoEmpleado || ev.empleado?.tipoEmpleado?.name || '-';
+      const score = Number(ev.punteoTotal || 0);
+      let status = 'Excelente';
+      if (score < 60) status = 'Necesita Mejora';
+      else if (score < 80) status = 'Aceptable';
+      else if (score < 90) status = 'Muy Bueno';
+
+      return {
+        'ID': ev.id,
+        'Docente / Instructor': docente,
+        'Puesto / Especialidad': puesto,
+        'Módulo': ev.nombreModulo || '-',
+        'No. Programa': ev.noPrograma || '-',
+        'Lugar / Aula': ev.lugar || '-',
+        'Punteo Total': `${score} / 100`,
+        'Dictamen': status,
+        'Fecha Inicio': ev.fechaInicio || '-',
+        'Fecha Fin': ev.fechaFin || '-',
+      };
+    });
+
+    exportToCsv(rows, 'Evaluaciones_Control_Calidad_INTECAP');
+    this.toast.success('Descarga exitosa', 'Reporte de evaluaciones exportado a Excel.');
+  }
+
+  exportPdf(): void {
+    const data = this.evaluaciones();
+    if (!data.length) {
+      this.toast.warning('Sin datos', 'No hay evaluaciones de calidad para exportar.');
+      return;
+    }
+
+    let rowsHtml = '';
+    data.forEach((ev) => {
+      const docente = ev.empleado ? `${ev.empleado.nombres} ${ev.empleado.apellidos}` : 'N/A';
+      const score = Number(ev.punteoTotal || 0);
+      const scoreColor = score >= 80 ? '#10b981' : (score >= 60 ? '#f59e0b' : '#ef4444');
+
+      rowsHtml += `
+        <tr>
+          <td><strong>#${ev.id}</strong></td>
+          <td>${docente}</td>
+          <td>${ev.nombreModulo || '-'}</td>
+          <td>${ev.noPrograma || '-'}</td>
+          <td>${ev.lugar || '-'}</td>
+          <td style="text-align: center; font-weight: bold; color: ${scoreColor};">${score} / 100</td>
+          <td>${ev.fechaFin || ev.fechaInicio || '-'}</td>
+        </tr>
+      `;
+    });
+
+    const bodyHtml = `
+      <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+        <thead>
+          <tr style="background-color: #002f6c; color: white;">
+            <th style="padding: 7px; border: 1px solid #ccc;">ID</th>
+            <th style="padding: 7px; border: 1px solid #ccc;">Docente / Instructor</th>
+            <th style="padding: 7px; border: 1px solid #ccc;">Módulo Formativo</th>
+            <th style="padding: 7px; border: 1px solid #ccc;">No. Programa</th>
+            <th style="padding: 7px; border: 1px solid #ccc;">Sede / Lugar</th>
+            <th style="padding: 7px; border: 1px solid #ccc; text-align: center;">Punteo Total</th>
+            <th style="padding: 7px; border: 1px solid #ccc;">Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+    `;
+
+    printHtmlReport('REPORTE GENERAL DE EVALUACIONES DE CONTROL DE CALIDAD', bodyHtml);
   }
 }

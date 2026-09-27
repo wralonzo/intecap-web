@@ -2,6 +2,14 @@
   <app-page-header
     title="Control de Inventario y Mobiliario"
     subtitle="Seguimiento de equipamiento audiovisual, mobiliario pedagógico y suministros en aulas.">
+    <div header-actions style="display: flex; gap: 0.5rem;">
+      <button class="btn btn-secondary btn-sm" (click)="exportExcel()" title="Descargar inventario en Excel">
+        📊 Exportar Excel
+      </button>
+      <button class="btn btn-secondary btn-sm" (click)="exportPdf()" title="Imprimir reporte de inventario">
+        🖨️ Imprimir PDF
+      </button>
+    </div>
   </app-page-header>
 
   <div class="sections-grid">

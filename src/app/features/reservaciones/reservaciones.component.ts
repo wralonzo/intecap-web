@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { WebSocketService } from '../../core/services/websocket.service';
+import { ToastService } from '../../core/services/toast.service';
 import { Reservacion, Salon, Empleado, Curso, Jornada, ReservacionesStats } from '../../core/models';
 import { ModalComponent, PageHeaderComponent, EmptyStateComponent } from '../../shared';
 
@@ -16,6 +17,7 @@ import { ModalComponent, PageHeaderComponent, EmptyStateComponent } from '../../
 export class ReservacionesComponent implements OnInit {
   private api = inject(ApiService);
   private ws = inject(WebSocketService);
+  private toast = inject(ToastService);
 
   // State Signals
   reservaciones = signal<Reservacion[]>([]);
@@ -154,10 +156,11 @@ export class ReservacionesComponent implements OnInit {
     if (confirm(`¿Aprobar la solicitud #${r.id} para el espacio "${r.salon?.title}"?`)) {
       this.api.cambiarEstadoReservacion(r.id, 2).subscribe({
         next: () => {
+          this.toast.success('Solicitud aprobada', `La reservación #${r.id} ha sido confirmada.`);
           this.loadStats();
           this.loadReservaciones(false);
         },
-        error: (err) => alert('Error al aprobar solicitud: ' + (err.error?.message || err.message)),
+        error: (err) => this.toast.error('Error', err.error?.message || err.message || 'Error al aprobar solicitud'),
       });
     }
   }
@@ -173,10 +176,11 @@ export class ReservacionesComponent implements OnInit {
     if (confirm(`¿Marcar como Concluido/Finalizado el evento #${r.id}?`)) {
       this.api.cambiarEstadoReservacion(r.id, 4).subscribe({
         next: () => {
+          this.toast.info('Evento concluido', `El evento #${r.id} fue finalizado.`);
           this.loadStats();
           this.loadReservaciones(false);
         },
-        error: (err) => alert('Error al finalizar evento: ' + (err.error?.message || err.message)),
+        error: (err) => this.toast.error('Error', err.error?.message || err.message || 'Error al finalizar evento'),
       });
     }
   }
@@ -198,10 +202,11 @@ export class ReservacionesComponent implements OnInit {
     this.api.cambiarEstadoReservacion(r.id, 3, this.motivoRechazoText).subscribe({
       next: () => {
         this.closeRechazoModal();
+        this.toast.warning('Solicitud rechazada', `La reservación #${r.id} fue declinada.`);
         this.loadStats();
         this.loadReservaciones(false);
       },
-      error: (err) => alert('Error al rechazar solicitud: ' + (err.error?.message || err.message)),
+      error: (err) => this.toast.error('Error', err.error?.message || err.message || 'Error al rechazar solicitud'),
     });
   }
 
@@ -209,10 +214,11 @@ export class ReservacionesComponent implements OnInit {
     if (confirm(`¿Estás seguro de eliminar el registro de reservación #${r.id}?`)) {
       this.api.deleteReservacion(r.id).subscribe({
         next: () => {
+          this.toast.info('Reservación eliminada', `El registro #${r.id} ha sido eliminado.`);
           this.loadStats();
           this.loadReservaciones(false);
         },
-        error: (err) => alert('Error al eliminar reservación: ' + (err.error?.message || err.message)),
+        error: (err) => this.toast.error('Error', err.error?.message || err.message || 'Error al eliminar reservación'),
       });
     }
   }
@@ -252,7 +258,7 @@ export class ReservacionesComponent implements OnInit {
 
   saveReservacion() {
     if (!this.formRes.salonId || !this.formRes.empleadoId || !this.formRes.cursoId) {
-      alert('Por favor completa los campos requeridos (Salón, Instructor y Curso).');
+      this.toast.warning('Campos requeridos', 'Por favor completa los campos requeridos (Salón, Instructor y Curso).');
       return;
     }
 
@@ -261,12 +267,13 @@ export class ReservacionesComponent implements OnInit {
       next: () => {
         this.saving.set(false);
         this.closeCreateModal();
+        this.toast.success('Reservación registrada', 'La solicitud de reservación ha sido guardada.');
         this.loadStats();
         this.loadReservaciones(false);
       },
       error: (err) => {
         this.saving.set(false);
-        alert('Error al guardar solicitud: ' + (err.error?.message || err.message));
+        this.toast.error('Error', err.error?.message || err.message || 'Error al guardar solicitud');
       },
     });
   }

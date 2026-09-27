@@ -266,6 +266,15 @@
               Todos los Espacios
             </button>
           </div>
+
+          <div class="actions-group" style="display: flex; gap: 0.5rem; margin-left: auto;">
+            <button class="btn btn-secondary btn-sm" (click)="exportMatrizExcel()" title="Descargar como Excel (.xlsx/csv)">
+              📊 Exportar Excel
+            </button>
+            <button class="btn btn-secondary btn-sm" (click)="exportMatrizPdf()" title="Imprimir o guardar como PDF">
+              🖨️ Imprimir PDF
+            </button>
+          </div>
         </div>
 
         @if (loading()) {

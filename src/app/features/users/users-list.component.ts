@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
 import { User, Empleado } from '../../core/models';
 import { PageHeaderComponent, ModalComponent, EmptyStateComponent } from '../../shared';
 
@@ -14,6 +15,7 @@ import { PageHeaderComponent, ModalComponent, EmptyStateComponent } from '../../
 })
 export class UsersListComponent implements OnInit {
   private api = inject(ApiService);
+  private toast = inject(ToastService);
 
   users = signal<User[]>([]);
   empleados = signal<Empleado[]>([]);
@@ -99,12 +101,12 @@ export class UsersListComponent implements OnInit {
 
   saveUser(): void {
     if (!this.activeUser.username.trim()) {
-      alert('Por favor introduce un nombre de usuario.');
+      this.toast.warning('Campo requerido', 'Por favor introduce un nombre de usuario.');
       return;
     }
 
     if (!this.isEditing() && !this.activeUser.password.trim()) {
-      alert('Por favor ingresa una contraseña para el nuevo usuario.');
+      this.toast.warning('Campo requerido', 'Por favor ingresa una contraseña para el nuevo usuario.');
       return;
     }
 
@@ -125,11 +127,12 @@ export class UsersListComponent implements OnInit {
         next: () => {
           this.saving.set(false);
           this.closeModal();
+          this.toast.success('Usuario actualizado', 'Los datos del usuario fueron actualizados exitosamente.');
           this.loadData();
         },
         error: (err) => {
           this.saving.set(false);
-          alert(err.error?.message || 'Error al actualizar usuario');
+          this.toast.error('Error', err.error?.message || 'Error al actualizar usuario');
         },
       });
     } else {
@@ -145,11 +148,12 @@ export class UsersListComponent implements OnInit {
         next: () => {
           this.saving.set(false);
           this.closeModal();
+          this.toast.success('Usuario creado', 'El nuevo usuario fue registrado con éxito.');
           this.loadData();
         },
         error: (err) => {
           this.saving.set(false);
-          alert(err.error?.message || 'Error al crear usuario');
+          this.toast.error('Error', err.error?.message || 'Error al crear usuario');
         },
       });
     }
@@ -158,8 +162,11 @@ export class UsersListComponent implements OnInit {
   deleteUser(id: number): void {
     if (!confirm(`¿Estás seguro de desactivar la cuenta de usuario #${id}?`)) return;
     this.api.deleteUser(id).subscribe({
-      next: () => this.loadData(),
-      error: (err) => alert(err.error?.message || 'Error al desactivar usuario'),
+      next: () => {
+        this.toast.info('Usuario desactivado', `La cuenta #${id} ha sido desactivada.`);
+        this.loadData();
+      },
+      error: (err) => this.toast.error('Error', err.error?.message || 'Error al desactivar usuario'),
     });
   }
 }

@@ -7,8 +7,14 @@
     <app-page-header
       title="Supervisión y Control de Calidad Docente"
       subtitle="Evaluación pedagógica integral, seguimiento de procesos formativos y estándares de excelencia I.O.DT-07.">
-      <div header-actions>
-        <button (click)="openCreateForm()" class="btn btn-gold">
+      <div header-actions style="display: flex; gap: 0.5rem; align-items: center;">
+        <button (click)="exportExcel()" class="btn btn-secondary btn-sm" title="Descargar evaluaciones en Excel">
+          📊 Exportar Excel
+        </button>
+        <button (click)="exportPdf()" class="btn btn-secondary btn-sm" title="Imprimir reporte general de calidad">
+          🖨️ Imprimir PDF
+        </button>
+        <button (click)="openCreateForm()" class="btn btn-gold btn-sm">
           <svg class="icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>

@@ -2,7 +2,7 @@ import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { User } from '../models';
+import { User, UserRole } from '../models';
 
 interface LoginResponse {
   access_token: string;
@@ -21,7 +21,20 @@ export class AuthService {
   token = signal<string | null>(this.getStoredToken());
 
   isAuthenticated = computed(() => !!this.token());
-  isAdmin = computed(() => this.currentUser()?.staff === 1);
+  role = computed<UserRole>(() => {
+    const user = this.currentUser();
+    if (!user) return 'DOCENTE';
+    if (user.role) return user.role;
+    if (user.staff === 1) return 'ADMIN';
+    const puesto = user.empleado?.tipoEmpleado?.name || user.empleado?.tipoEmpleado?.tipoEmpleado || '';
+    if (puesto.toLowerCase().includes('bodega') || puesto.toLowerCase().includes('almacen') || puesto.toLowerCase().includes('suministro')) {
+      return 'BODEGA';
+    }
+    return 'DOCENTE';
+  });
+  isAdmin = computed(() => this.role() === 'ADMIN');
+  isBodega = computed(() => this.role() === 'BODEGA');
+  isDocente = computed(() => this.role() === 'DOCENTE');
 
   constructor(private http: HttpClient) {}
 

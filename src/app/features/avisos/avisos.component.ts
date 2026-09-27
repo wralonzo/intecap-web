@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { WebSocketService } from '../../core/services/websocket.service';
+import { ToastService } from '../../core/services/toast.service';
 import { Aviso } from '../../core/models';
 import { ModalComponent, PageHeaderComponent, EmptyStateComponent } from '../../shared';
 
@@ -17,6 +18,7 @@ import { ModalComponent, PageHeaderComponent, EmptyStateComponent } from '../../
 export class AvisosComponent implements OnInit {
   private api = inject(ApiService);
   private ws = inject(WebSocketService);
+  private toast = inject(ToastService);
 
   avisos = signal<Aviso[]>([]);
   loading = signal<boolean>(true);
@@ -159,7 +161,7 @@ export class AvisosComponent implements OnInit {
 
   saveAviso() {
     if (!this.formData.titulo.trim() || !this.formData.contenido.trim()) {
-      alert('Por favor completa el título y el contenido del aviso.');
+      this.toast.warning('Campos requeridos', 'Por favor completa el título y el contenido del aviso.');
       return;
     }
 
@@ -170,11 +172,12 @@ export class AvisosComponent implements OnInit {
         next: () => {
           this.saving.set(false);
           this.closeModal();
+          this.toast.success('Aviso actualizado', 'El aviso informativo fue actualizado correctamente.');
           this.loadAvisos(false);
         },
         error: (err) => {
           this.saving.set(false);
-          alert('Error al actualizar aviso: ' + (err.error?.message || err.message));
+          this.toast.error('Error', err.error?.message || err.message || 'Error al actualizar aviso');
         },
       });
     } else {
@@ -182,11 +185,12 @@ export class AvisosComponent implements OnInit {
         next: () => {
           this.saving.set(false);
           this.closeModal();
+          this.toast.success('Aviso publicado', 'El comunicado ha sido difundido en el sistema.');
           this.loadAvisos(false);
         },
         error: (err) => {
           this.saving.set(false);
-          alert('Error al publicar aviso: ' + (err.error?.message || err.message));
+          this.toast.error('Error', err.error?.message || err.message || 'Error al publicar aviso');
         },
       });
     }
@@ -198,8 +202,12 @@ export class AvisosComponent implements OnInit {
         this.avisos.update((list) =>
           list.map((item) => (item.id === a.id ? { ...item, mostrarEnTv: actualizado.mostrarEnTv } : item))
         );
+        this.toast.info(
+          'Pantalla TV',
+          actualizado.mostrarEnTv ? 'Aviso activado para rotación en TV.' : 'Aviso ocultado de pantallas TV.'
+        );
       },
-      error: (err) => alert('Error al cambiar visualización en TV: ' + (err.error?.message || err.message)),
+      error: (err) => this.toast.error('Error', err.error?.message || err.message || 'Error al cambiar visualización en TV'),
     });
   }
 
@@ -207,9 +215,10 @@ export class AvisosComponent implements OnInit {
     if (confirm(`¿Estás seguro de eliminar el aviso "${a.titulo}"?`)) {
       this.api.deleteAviso(a.id).subscribe({
         next: () => {
+          this.toast.info('Aviso eliminado', `El aviso "${a.titulo}" ha sido removido.`);
           this.loadAvisos(false);
         },
-        error: (err) => alert('Error al eliminar aviso: ' + (err.error?.message || err.message)),
+        error: (err) => this.toast.error('Error', err.error?.message || err.message || 'Error al eliminar aviso'),
       });
     }
   }
