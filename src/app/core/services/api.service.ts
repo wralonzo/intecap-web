@@ -353,19 +353,6 @@ export class ApiService {
     return this.http.delete<{ message: string }>(`${this.baseUrl}/users/${id}`);
   }
 
-  // Chat & Notificaciones
-  getMensajes(): Observable<Mensaje[]> {
-    return this.http.get<Mensaje[]>(`${this.baseUrl}/chat/mensajes`);
-  }
-
-  sendMensaje(mensaje: string, tipo = 1): Observable<Mensaje> {
-    return this.http.post<Mensaje>(`${this.baseUrl}/chat/mensajes`, { mensaje, tipo });
-  }
-
-  getNotificaciones(): Observable<Notificacion[]> {
-    return this.http.get<Notificacion[]>(`${this.baseUrl}/chat/notificaciones`);
-  }
-
   // Avisos & Comunicados (CRUD y TV Display)
   getAvisos(soloTv?: boolean, soloActivos = true): Observable<Aviso[]> {
     let params = new HttpParams();

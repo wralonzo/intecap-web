@@ -1,0 +1,128 @@
+<div class="custom-select-container" [class.disabled]="disabled" [class.is-open]="isOpen()" [class]="'size-' + size">
+  @if (label) {
+    <label class="select-label">
+      {{ label }}
+      @if (required) {
+        <span class="required-star">*</span>
+      }
+    </label>
+  }
+
+  <div
+    class="select-trigger"
+    (click)="toggleDropdown($event)"
+    [attr.tabindex]="disabled ? -1 : 0"
+    [attr.aria-expanded]="isOpen()"
+    role="combobox"
+  >
+    <div class="trigger-content">
+      @if (selectedOption()) {
+        <div class="selected-item">
+          @if (selectedOption()?.icon) {
+            <span class="item-icon">{{ selectedOption()?.icon }}</span>
+          }
+          <div class="item-text-group">
+            <span class="item-label">{{ selectedOption()?.label }}</span>
+            @if (selectedOption()?.subtitle) {
+              <span class="item-subtitle">{{ selectedOption()?.subtitle }}</span>
+            }
+          </div>
+          @if (selectedOption()?.badge) {
+            <span class="item-badge" [class]="'badge-' + (selectedOption()?.badgeColor || 'blue')">
+              {{ selectedOption()?.badge }}
+            </span>
+          }
+        </div>
+      } @else {
+        <span class="placeholder-text">{{ placeholder }}</span>
+      }
+    </div>
+
+    <div class="trigger-actions">
+      @if (clearable && selectedValue() !== null && !disabled) {
+        <button
+          type="button"
+          class="clear-btn"
+          (click)="clearSelection($event)"
+          title="Limpiar selección"
+          aria-label="Limpiar selección"
+        >
+          &times;
+        </button>
+      }
+
+      <div class="chevron-icon" [class.rotate]="isOpen()">
+        <svg viewBox="0 0 20 20" fill="currentColor">
+          <path
+            fill-rule="evenodd"
+            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  @if (isOpen()) {
+    <div class="dropdown-menu animate-fade-in" role="listbox">
+      @if (searchable && options.length > 4) {
+        <div class="search-wrapper" (click)="$event.stopPropagation()">
+          <svg class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            #searchInput
+            type="text"
+            class="search-input"
+            [placeholder]="searchPlaceholder"
+            [ngModel]="searchTerm()"
+            (ngModelChange)="searchTerm.set($event)"
+            autofocus
+          />
+        </div>
+      }
+
+      <div class="options-list">
+        @for (opt of filteredOptions(); track opt.value; let idx = $index) {
+          <div
+            class="option-item"
+            [class.selected]="opt.value === selectedValue()"
+            [class.highlighted]="idx === highlightedIndex()"
+            [class.disabled-option]="opt.disabled"
+            (click)="selectOption(opt, $event)"
+            role="option"
+            [attr.aria-selected]="opt.value === selectedValue()"
+          >
+            <div class="option-main">
+              @if (opt.icon) {
+                <span class="option-icon">{{ opt.icon }}</span>
+              }
+              <div class="option-text">
+                <div class="option-label">{{ opt.label }}</div>
+                @if (opt.subtitle) {
+                  <div class="option-sub">{{ opt.subtitle }}</div>
+                }
+              </div>
+            </div>
+
+            <div class="option-extra">
+              @if (opt.badge) {
+                <span class="option-badge" [class]="'badge-' + (opt.badgeColor || 'blue')">
+                  {{ opt.badge }}
+                </span>
+              }
+              @if (opt.value === selectedValue()) {
+                <span class="check-icon">✓</span>
+              }
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-results">
+            <span class="empty-icon">🔍</span>
+            <span>No se encontraron resultados</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
