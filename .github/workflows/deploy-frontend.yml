@@ -38,7 +38,7 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: Verificar Compilación Angular (Producción)
-        run: npm run build -- --configuration=production
+        run: npm run build --configuration=production
 
   # STAGE 2: Despliegue en VPS (Manual vía workflow_dispatch o Push a main)
   deploy-vps:
