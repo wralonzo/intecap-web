@@ -35,11 +35,9 @@ jobs:
           cache-dependency-path: './package-lock.json'
 
       - name: Instalar Dependencias
-        working-directory: ./intecap-web
         run: npm install --legacy-peer-deps
 
       - name: Verificar Compilación Angular (Producción)
-        working-directory: ./intecap-web
         run: npm run build -- --configuration=production
 
   # STAGE 2: Despliegue en VPS (Manual vía workflow_dispatch o Push a main)
