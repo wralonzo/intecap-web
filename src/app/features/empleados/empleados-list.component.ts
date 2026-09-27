@@ -143,25 +143,33 @@ export class EmpleadosListComponent implements OnInit {
     this.activeEmp.password = pass;
   }
 
+  isSaving = signal(false);
+
   saveEmpleado(): void {
+    if (this.isSaving()) return;
     if (!this.activeEmp.nombres || !this.activeEmp.apellidos) {
       alert('Por favor completa los nombres y apellidos del empleado.');
       return;
     }
 
+    this.isSaving.set(true);
     if (this.isEditingEmp() && this.activeEmp.id) {
       this.apiService.updateEmpleado(this.activeEmp.id, this.activeEmp).subscribe({
         next: () => {
+          this.isSaving.set(false);
           this.closeEmpleadoModal();
           this.loadEmpleados();
         },
+        error: () => this.isSaving.set(false),
       });
     } else {
       this.apiService.createEmpleado(this.activeEmp).subscribe({
         next: () => {
+          this.isSaving.set(false);
           this.closeEmpleadoModal();
           this.loadEmpleados();
         },
+        error: () => this.isSaving.set(false),
       });
     }
   }

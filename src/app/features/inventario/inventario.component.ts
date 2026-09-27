@@ -78,9 +78,13 @@ export class InventarioComponent implements OnInit {
     this.editingId = null;
   }
 
+  isSaving = signal(false);
+
   saveItem(): void {
+    if (this.isSaving()) return;
     if (!this.name) return;
 
+    this.isSaving.set(true);
     if (this.activeModal() === 'mob') {
       const payload: Partial<Mobiliario> = {
         nombre: this.name,
@@ -89,14 +93,22 @@ export class InventarioComponent implements OnInit {
       };
 
       if (this.editingId) {
-        this.apiService.updateMobiliario(this.editingId, payload).subscribe(() => {
-          this.closeModal();
-          this.loadAll();
+        this.apiService.updateMobiliario(this.editingId, payload).subscribe({
+          next: () => {
+            this.isSaving.set(false);
+            this.closeModal();
+            this.loadAll();
+          },
+          error: () => this.isSaving.set(false),
         });
       } else {
-        this.apiService.createMobiliario(payload).subscribe(() => {
-          this.closeModal();
-          this.loadAll();
+        this.apiService.createMobiliario(payload).subscribe({
+          next: () => {
+            this.isSaving.set(false);
+            this.closeModal();
+            this.loadAll();
+          },
+          error: () => this.isSaving.set(false),
         });
       }
     } else if (this.activeModal() === 'item') {
@@ -107,14 +119,22 @@ export class InventarioComponent implements OnInit {
       };
 
       if (this.editingId) {
-        this.apiService.updateItem(this.editingId, payload).subscribe(() => {
-          this.closeModal();
-          this.loadAll();
+        this.apiService.updateItem(this.editingId, payload).subscribe({
+          next: () => {
+            this.isSaving.set(false);
+            this.closeModal();
+            this.loadAll();
+          },
+          error: () => this.isSaving.set(false),
         });
       } else {
-        this.apiService.createItem(payload).subscribe(() => {
-          this.closeModal();
-          this.loadAll();
+        this.apiService.createItem(payload).subscribe({
+          next: () => {
+            this.isSaving.set(false);
+            this.closeModal();
+            this.loadAll();
+          },
+          error: () => this.isSaving.set(false),
         });
       }
     }
