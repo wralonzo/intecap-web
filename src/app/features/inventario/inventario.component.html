@@ -1,0 +1,107 @@
+<div class="inventario-page">
+  <app-page-header
+    title="Control de Inventario y Mobiliario"
+    subtitle="Seguimiento de equipamiento audiovisual, mobiliario pedagógico y suministros en aulas.">
+  </app-page-header>
+
+  <div class="sections-grid">
+    <!-- Mobiliario -->
+    <div class="card section-card">
+      <div class="section-top">
+        <div>
+          <h3>🪑 Mobiliario y Equipamiento</h3>
+          <p class="section-subtitle">Muebles, proyectores, pantallas y equipo asignable</p>
+        </div>
+        <button (click)="openMobModal()" class="btn btn-primary btn-sm">+ Registrar Mobiliario</button>
+      </div>
+
+      <div class="items-list">
+        @for (m of mobiliario(); track m.id) {
+          <div class="item-card">
+            <div class="item-main">
+              <div class="item-name">{{ m.nombre }}</div>
+              <div class="item-desc">{{ m.descripcion || 'Sin descripción adicional' }}</div>
+            </div>
+            <div class="item-right">
+              <div class="qty-badge">{{ m.cantidad }} u.</div>
+              <div class="item-actions">
+                <button (click)="openMobModal(m)" class="btn-icon btn-edit" title="Modificar mobiliario">
+                  ✏️
+                </button>
+                <button (click)="deleteMobiliario(m)" class="btn-icon btn-delete" title="Eliminar mobiliario">
+                  🗑️
+                </button>
+              </div>
+            </div>
+          </div>
+        } @empty {
+          <app-empty-state message="No hay mobiliario registrado."></app-empty-state>
+        }
+      </div>
+    </div>
+
+    <!-- Items y Suministros -->
+    <div class="card section-card">
+      <div class="section-top">
+        <div>
+          <h3>📦 Suministros y Artículos</h3>
+          <p class="section-subtitle">Consumibles, cables, herramientas y papelería</p>
+        </div>
+        <button (click)="openItemModal()" class="btn btn-gold btn-sm">+ Registrar Suministro</button>
+      </div>
+
+      <div class="items-list">
+        @for (item of items(); track item.id) {
+          <div class="item-card">
+            <div class="item-main">
+              <div class="item-name">{{ item.nombre }}</div>
+              <div class="item-desc">{{ item.descripcion || 'Sin descripción adicional' }}</div>
+            </div>
+            <div class="item-right">
+              <div class="qty-badge bg-gold">{{ item.cantidad }} u.</div>
+              <div class="item-actions">
+                <button (click)="openItemModal(item)" class="btn-icon btn-edit" title="Modificar artículo">
+                  ✏️
+                </button>
+                <button (click)="deleteItem(item)" class="btn-icon btn-delete" title="Eliminar artículo">
+                  🗑️
+                </button>
+              </div>
+            </div>
+          </div>
+        } @empty {
+          <app-empty-state message="No hay suministros registrados."></app-empty-state>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Mobiliario / Item -->
+  @if (activeModal()) {
+    <app-modal [title]="modalTitle()" (close)="closeModal()">
+      <form (ngSubmit)="saveItem()">
+        <div class="form-group">
+          <label>Nombre del Artículo *</label>
+          <input type="text" class="form-control" placeholder="Ej: Proyector Epson HDMI" [(ngModel)]="name" name="name" required />
+        </div>
+
+        <div class="form-group">
+          <label>Cantidad Disponible *</label>
+          <input type="number" min="0" class="form-control" placeholder="10" [(ngModel)]="quantity" name="quantity" required />
+        </div>
+
+        <div class="form-group">
+          <label>Descripción / Observación</label>
+          <textarea class="form-control" rows="2" placeholder="Especificaciones, marca o condición..." [(ngModel)]="desc" name="desc"></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" (click)="closeModal()" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-gold">
+            {{ editingId ? 'Guardar Cambios' : 'Guardar en Inventario' }}
+          </button>
+        </div>
+      </form>
+    </app-modal>
+  }
+</div>

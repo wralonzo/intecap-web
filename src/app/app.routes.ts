@@ -8,6 +8,7 @@ import { EmpleadosListComponent } from './features/empleados/empleados-list.comp
 import { AcademicoComponent } from './features/academico/academico.component';
 import { InventarioComponent } from './features/inventario/inventario.component';
 import { CalidadComponent } from './features/calidad/calidad.component';
+import { AvisosComponent } from './features/avisos/avisos.component';
 import { UsersListComponent } from './features/users/users-list.component';
 import { TvDisplayComponent } from './features/tv-display/tv-display.component';
 import { authGuard } from './core/guards/auth.guard';
@@ -50,6 +51,10 @@ export const routes: Routes = [
         component: ReservacionesComponent,
       },
       {
+        path: 'avisos',
+        component: AvisosComponent,
+      },
+      {
         path: 'empleados',
         component: EmpleadosListComponent,
       },
@@ -71,6 +76,7 @@ export const routes: Routes = [
       },
     ],
   },
+
   {
     path: '**',
     redirectTo: 'dashboard',

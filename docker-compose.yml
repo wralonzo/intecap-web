@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # Frontend Angular INTECAP
+  intecap-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: intecap-frontend
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy-net"
+
+      # Router HTTPS (Puerto 443 con SSL Let's Encrypt)
+      - "traefik.http.routers.intecap-web.rule=Host(`${DOMAIN:-intecap.appgtmobile.online}`)"
+      - "traefik.http.routers.intecap-web.entrypoints=websecure"
+      - "traefik.http.routers.intecap-web.tls=true"
+      - "traefik.http.routers.intecap-web.tls.certresolver=myresolver"
+      - "traefik.http.routers.intecap-web.priority=10"
+      - "traefik.http.services.intecap-web.loadbalancer.server.port=80"
+
+      # Router HTTP (Puerto 80 con redirección automática a HTTPS)
+      - "traefik.http.routers.intecap-web-http.rule=Host(`${DOMAIN:-intecap.appgtmobile.online}`)"
+      - "traefik.http.routers.intecap-web-http.entrypoints=web"
+      - "traefik.http.routers.intecap-web-http.middlewares=redirect-to-https"
+      - "traefik.http.routers.intecap-web-http.priority=10"
+
+      # Middleware de Redirección HTTP a HTTPS
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+    networks:
+      - proxy-net
+
+networks:
+  proxy-net:
+    external: true

@@ -86,6 +86,11 @@ export interface Curso {
   descripcion?: string;
   carreraId?: number;
   carrera?: Carrera;
+  esEnLinea?: boolean;
+  empleadoId?: number;
+  empleado?: Empleado;
+  jornadaId?: number;
+  jornada?: Jornada;
   estado: number;
 }
 
@@ -140,13 +145,15 @@ export interface Mobiliario {
   estado: number;
 }
 
-export interface Item {
+export interface Suministro {
   id: number;
   nombre: string;
   cantidad: number;
   descripcion?: string;
   estado: number;
 }
+
+export type Item = Suministro;
 
 export interface ControlCalidad {
   id: number;
@@ -287,4 +294,19 @@ export interface RealtimeResponse {
   };
   data: RealtimeSalonStatus[];
 }
+
+export interface Aviso {
+  id: number;
+  titulo: string;
+  contenido: string;
+  tipo: string; // 'informativo' | 'urgente' | 'evento' | 'mantenimiento' | 'general'
+  mostrarEnTv: boolean;
+  prioridad: number; // 1: Alta / Urgente, 2: Media, 3: Baja / General
+  fechaInicio?: string;
+  fechaFin?: string;
+  estado: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 

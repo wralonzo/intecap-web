@@ -1,0 +1,136 @@
+.inventario-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.sections-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+
+  @media (max-width: 860px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.section-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.section-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+
+  h3 {
+    font-size: 1.125rem;
+    color: var(--intecap-navy-dark, #0f172a);
+    margin-bottom: 0.2rem;
+  }
+}
+
+.section-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted, #64748b);
+  margin: 0;
+}
+
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.item-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1rem;
+  background: var(--bg-main, #f8fafc);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-md, 8px);
+  gap: 1rem;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #cbd5e1;
+    background: #ffffff;
+  }
+}
+
+.item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.item-name {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--intecap-navy-dark, #0f172a);
+}
+
+.item-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #64748b);
+}
+
+.item-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.qty-badge {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  background-color: var(--intecap-blue-light, #e0e7ff);
+  color: var(--intecap-navy, #1e3a8a);
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius-full, 9999px);
+  white-space: nowrap;
+
+  &.bg-gold {
+    background-color: var(--intecap-gold-light, #fef3c7);
+    color: #B45309;
+  }
+}
+
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.btn-icon {
+  background: none;
+  border: 1px solid var(--border-color, #e2e8f0);
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+
+  &:hover {
+    background: #f1f5f9;
+  }
+
+  &.btn-delete:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+  }
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}

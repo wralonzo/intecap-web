@@ -1,0 +1,634 @@
+<div class="salones-page">
+  <!-- Header -->
+  <app-page-header
+    title="Gestión de Salones, Talleres y Jornadas"
+    subtitle="Supervisión en tiempo real, matriz semanal de horarios (AdminSalones), asignación de cursos y catálogo de jornadas.">
+    <div header-actions>
+      @if (activeView() === 'catalogo') {
+        <button (click)="openCreateModal()" class="btn btn-gold">
+          <svg class="icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Nuevo Espacio
+        </button>
+      } @else if (activeView() === 'jornadas') {
+        <button (click)="openCreateJornadaModal()" class="btn btn-gold">
+          <svg class="icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Nueva Jornada
+        </button>
+      } @else if (activeView() === 'matriz') {
+        <button (click)="printMatriz()" class="btn btn-primary">
+          <svg class="icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+          🖨️ Imprimir Reporte
+        </button>
+      }
+    </div>
+  </app-page-header>
+
+  <!-- Navigation Modes (Tabs) -->
+  <div class="view-tabs">
+    <button
+      class="view-tab-btn"
+      [class.active]="activeView() === 'realtime'"
+      (click)="switchView('realtime')"
+    >
+      <span class="live-dot"></span>
+      ⚡ Disponibilidad en Tiempo Real
+    </button>
+    <button
+      class="view-tab-btn"
+      [class.active]="activeView() === 'matriz'"
+      (click)="switchView('matriz')"
+    >
+      📊 Reporte Matriz Semanal (AdminSalones)
+    </button>
+    <button
+      class="view-tab-btn"
+      [class.active]="activeView() === 'catalogo'"
+      (click)="switchView('catalogo')"
+    >
+      🏛️ Catálogo de Salones y Talleres ({{ salones().length }})
+    </button>
+    <button
+      class="view-tab-btn"
+      [class.active]="activeView() === 'jornadas'"
+      (click)="switchView('jornadas')"
+    >
+      ⏰ Catálogo de Jornadas ({{ jornadasList().length }})
+    </button>
+  </div>
+
+  <!-- VISTA 1: DISPONIBILIDAD EN TIEMPO REAL -->
+  @if (activeView() === 'realtime') {
+    <div class="realtime-section">
+      <div class="card toolbar-card">
+        <div class="realtime-toolbar">
+          <div class="day-selector-group">
+            <span class="toolbar-label">📅 Día Consultado:</span>
+            <div class="day-chips">
+              @for (d of diasSemana; track d) {
+                <button
+                  class="day-chip"
+                  [class.active]="selectedDia() === d"
+                  (click)="changeRealtimeDia(d)"
+                >
+                  {{ d }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="type-filter-group">
+            <span class="toolbar-label">Filtrar:</span>
+            <button
+              class="filter-chip"
+              [class.active]="realtimeTipo() === undefined"
+              (click)="changeRealtimeTipo(undefined)"
+            >
+              Todos
+            </button>
+            <button
+              class="filter-chip chip-talleres"
+              [class.active]="realtimeTipo() === 0"
+              (click)="changeRealtimeTipo(0)"
+            >
+              ⚡ Solo Talleres
+            </button>
+            <button
+              class="filter-chip chip-salones"
+              [class.active]="realtimeTipo() === 1"
+              (click)="changeRealtimeTipo(1)"
+            >
+              🏛️ Solo Salones
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Realtime KPI Summary -->
+      @if (realtimeData()) {
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon bg-blue">🏛️</div>
+            <div class="stat-info">
+              <span class="stat-label">Total de Espacios</span>
+              <span class="stat-value">{{ realtimeData()?.estadisticas?.total || 0 }}</span>
+              <span class="stat-sub">{{ selectedDia() }}</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon bg-green">✓</div>
+            <div class="stat-info">
+              <span class="stat-label">Disponibles Ahora</span>
+              <span class="stat-value text-green">{{ realtimeData()?.estadisticas?.disponiblesAhora || 0 }}</span>
+              <span class="stat-sub">Listos para asignación</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon bg-amber">⚡</div>
+            <div class="stat-info">
+              <span class="stat-label">Ocupados / Con Curso</span>
+              <span class="stat-value text-amber">{{ realtimeData()?.estadisticas?.ocupadosAhora || 0 }}</span>
+              <span class="stat-sub">En sesión académica</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon bg-gold">📊</div>
+            <div class="stat-info">
+              <span class="stat-label">% Ocupación</span>
+              <span class="stat-value text-gold">{{ realtimeData()?.estadisticas?.porcentajeOcupacion || 0 }}%</span>
+              <span class="stat-sub">Capacidad del día</span>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Realtime Cards Grid -->
+      @if (loading()) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Consultando disponibilidad en tiempo real vía WebSockets...</p>
+        </div>
+      } @else if (!realtimeData() || realtimeData()?.data?.length === 0) {
+        <app-empty-state icon="🏛️" message="No se encontraron registros de disponibilidad para el filtro seleccionado."></app-empty-state>
+      } @else {
+        <div class="realtime-cards-grid">
+          @for (item of realtimeData()?.data; track item.id) {
+            <div class="card realtime-card">
+              <div class="card-header-row">
+                <div class="room-icon-box" [style.background-color]="item.tipoSalon === 1 ? '#002F6C' : '#E5A50B'">
+                  {{ item.tipoSalon === 1 ? '🏛️' : '⚡' }}
+                </div>
+                <div>
+                  <h3 class="room-title">{{ item.title }}</h3>
+                  <span class="room-type-tag" [class.is-taller]="item.tipoSalon === 0">
+                    {{ item.tipoSalon === 1 ? 'Salón Teórico' : 'Taller Técnico' }} • {{ item.cantidadPersonas }} personas
+                  </span>
+                </div>
+              </div>
+
+              <!-- Shifts Breakdown -->
+              <div class="shifts-list">
+                <div class="shift-item" [class.is-occupied]="item.turnos.manana.ocupado">
+                  <div class="shift-header">
+                    <span class="shift-name">🌅 Mañana (07:30 - 12:30)</span>
+                    <span class="shift-status-badge" [class.badge-occ]="item.turnos.manana.ocupado">
+                      {{ item.turnos.manana.ocupado ? 'Ocupado' : 'Disponible' }}
+                    </span>
+                  </div>
+                  <div class="shift-course">
+                    {{ item.turnos.manana.curso || 'Espacio libre' }}
+                  </div>
+                </div>
+
+                <div class="shift-item" [class.is-occupied]="item.turnos.tarde.ocupado">
+                  <div class="shift-header">
+                    <span class="shift-name">☀️ Tarde (13:00 - 17:30)</span>
+                    <span class="shift-status-badge" [class.badge-occ]="item.turnos.tarde.ocupado">
+                      {{ item.turnos.tarde.ocupado ? 'Ocupado' : 'Disponible' }}
+                    </span>
+                  </div>
+                  <div class="shift-course">
+                    {{ item.turnos.tarde.curso || 'Espacio libre' }}
+                  </div>
+                </div>
+
+                <div class="shift-item" [class.is-occupied]="item.turnos.noche.ocupado">
+                  <div class="shift-header">
+                    <span class="shift-name">🌙 Noche (18:00 - 21:30)</span>
+                    <span class="shift-status-badge" [class.badge-occ]="item.turnos.noche.ocupado">
+                      {{ item.turnos.noche.ocupado ? 'Ocupado' : 'Disponible' }}
+                    </span>
+                  </div>
+                  <div class="shift-course">
+                    {{ item.turnos.noche.curso || 'Espacio libre' }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="card-footer-action">
+                <button (click)="openQuickEditHorario(item.id, item.title)" class="btn btn-secondary btn-sm w-100">
+                  ✏️ Asignar Cursos por Día
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- VISTA 2: MATRIZ SEMANAL DE HORARIOS -->
+  @if (activeView() === 'matriz') {
+    <div class="matriz-section">
+      <div class="card main-table-card">
+        <div class="toolbar">
+          <div class="search-box">
+            <svg class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              class="form-control search-input"
+              placeholder="Buscar taller o salón por nombre..."
+              [(ngModel)]="matrizSearch"
+              (ngModelChange)="loadMatriz()"
+            />
+          </div>
+
+          <div class="filter-group">
+            <button
+              class="filter-chip chip-talleres"
+              [class.active]="matrizTipo() === 0"
+              (click)="changeMatrizTipo(0)"
+            >
+              ⚡ Talleres de INTECAP
+            </button>
+            <button
+              class="filter-chip chip-salones"
+              [class.active]="matrizTipo() === 1"
+              (click)="changeMatrizTipo(1)"
+            >
+              🏛️ Salones Teóricos
+            </button>
+            <button
+              class="filter-chip"
+              [class.active]="matrizTipo() === undefined"
+              (click)="changeMatrizTipo(undefined)"
+            >
+              Todos los Espacios
+            </button>
+          </div>
+        </div>
+
+        @if (loading()) {
+          <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Cargando matriz semanal de horarios...</p>
+          </div>
+        } @else if (matrizData().length === 0) {
+          <app-empty-state icon="📋" message="No se encontraron espacios en la matriz semanal."></app-empty-state>
+        } @else {
+          <div class="table-responsive" id="print-area">
+            <table class="matrix-table">
+              <thead>
+                <tr>
+                  <th class="th-room">Salón / Taller</th>
+                  <th class="th-shift">Jornada</th>
+                  <th class="th-day">Lunes</th>
+                  <th class="th-day">Martes</th>
+                  <th class="th-day">Miércoles</th>
+                  <th class="th-day">Jueves</th>
+                  <th class="th-day">Viernes</th>
+                  <th class="th-day">Sábado</th>
+                  <th class="th-day">Domingo</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of matrizData(); track row.salon.id) {
+                  <tr class="row-manana">
+                    <td rowspan="3" class="room-title-cell">
+                      <div class="matrix-room-title">{{ row.salon.title }}</div>
+                      <span class="matrix-room-badge" [class.is-taller]="row.salon.tipoSalon === 0">
+                        {{ row.salon.tipoSalon === 1 ? 'Salón' : 'Taller' }} ({{ row.salon.cantidadPersonas }} p.)
+                      </span>
+                      <button (click)="openQuickEditHorario(row.salon.id, row.salon.title)" class="btn-assign-row" title="Gestionar Horario">
+                        ✏️ Asignar Cursos
+                      </button>
+                    </td>
+                    <td class="shift-label-cell shift-m">🌅 Mañana</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.lunes.manana" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 1)" title="Editar Lunes">{{ row.dias.lunes.manana || '-' }}</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.martes.manana" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 2)" title="Editar Martes">{{ row.dias.martes.manana || '-' }}</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.miercoles.manana" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 3)" title="Editar Miércoles">{{ row.dias.miercoles.manana || '-' }}</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.jueves.manana" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 4)" title="Editar Jueves">{{ row.dias.jueves.manana || '-' }}</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.viernes.manana" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 5)" title="Editar Viernes">{{ row.dias.viernes.manana || '-' }}</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.sabado.manana" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 6)" title="Editar Sábado">{{ row.dias.sabado.manana || '-' }}</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.domingo.manana" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 7)" title="Editar Domingo">{{ row.dias.domingo.manana || '-' }}</td>
+                  </tr>
+
+                  <tr class="row-tarde">
+                    <td class="shift-label-cell shift-t">☀️ Tarde</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.lunes.tarde" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 1)" title="Editar Lunes">{{ row.dias.lunes.tarde || '-' }}</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.martes.tarde" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 2)" title="Editar Martes">{{ row.dias.martes.tarde || '-' }}</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.miercoles.tarde" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 3)" title="Editar Miércoles">{{ row.dias.miercoles.tarde || '-' }}</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.jueves.tarde" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 4)" title="Editar Jueves">{{ row.dias.jueves.tarde || '-' }}</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.viernes.tarde" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 5)" title="Editar Viernes">{{ row.dias.viernes.tarde || '-' }}</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.sabado.tarde" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 6)" title="Editar Sábado">{{ row.dias.sabado.tarde || '-' }}</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.domingo.tarde" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 7)" title="Editar Domingo">{{ row.dias.domingo.tarde || '-' }}</td>
+                  </tr>
+
+                  <tr class="row-noche">
+                    <td class="shift-label-cell shift-n">🌙 Noche</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.lunes.noche" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 1)" title="Editar Lunes">{{ row.dias.lunes.noche || '-' }}</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.martes.noche" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 2)" title="Editar Martes">{{ row.dias.martes.noche || '-' }}</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.miercoles.noche" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 3)" title="Editar Miércoles">{{ row.dias.miercoles.noche || '-' }}</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.jueves.noche" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 4)" title="Editar Jueves">{{ row.dias.jueves.noche || '-' }}</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.viernes.noche" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 5)" title="Editar Viernes">{{ row.dias.viernes.noche || '-' }}</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.sabado.noche" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 6)" title="Editar Sábado">{{ row.dias.sabado.noche || '-' }}</td>
+                    <td class="course-cell clickable" [class.occupied]="row.dias.domingo.noche" (click)="openQuickEditHorario(row.salon.id, row.salon.title, 7)" title="Editar Domingo">{{ row.dias.domingo.noche || '-' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- VISTA 3: CATÁLOGO DE SALONES Y TALLERES -->
+  @if (activeView() === 'catalogo') {
+    <div class="catalogo-section">
+      <div class="filter-tabs">
+        <button [class.active]="catalogoFilter() === 'all'" (click)="catalogoFilter.set('all')" class="tab-btn">
+          Todos los Espacios ({{ salones().length }})
+        </button>
+        <button [class.active]="catalogoFilter() === 'salones'" (click)="catalogoFilter.set('salones')" class="tab-btn">
+          🏛️ Salones Teóricos
+        </button>
+        <button [class.active]="catalogoFilter() === 'talleres'" (click)="catalogoFilter.set('talleres')" class="tab-btn">
+          ⚡ Talleres Prácticos
+        </button>
+      </div>
+
+      @if (loading()) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Cargando catálogo de espacios...</p>
+        </div>
+      } @else if (filteredSalones().length === 0) {
+        <app-empty-state icon="🏛️" message="No se encontraron salones ni talleres registrados.">
+          <button (click)="openCreateModal()" class="btn btn-primary btn-sm">Registrar Espacio</button>
+        </app-empty-state>
+      } @else {
+        <div class="salones-grid">
+          @for (s of filteredSalones(); track s.id) {
+            <div class="card salon-card">
+              <div class="card-top">
+                <span class="badge" [class.badge-primary]="s.tipoSalon === 1" [class.badge-gold]="s.tipoSalon === 0">
+                  {{ s.tipoSalon === 1 ? 'Salón Teórico' : 'Taller Técnico' }}
+                </span>
+                <span class="badge" [class.badge-success]="s.disponibilidad === 1" [class.badge-danger]="s.disponibilidad === 0">
+                  {{ s.disponibilidad === 1 ? '● Habilitado' : '● Inactivo' }}
+                </span>
+              </div>
+
+              <h3 class="salon-title">{{ s.title }}</h3>
+
+              <div class="meta-row">
+                <span class="meta-item">
+                  👥 Capacidad: <strong>{{ s.cantidadPersonas || 25 }} alumnos</strong>
+                </span>
+                <span class="meta-item">
+                  ⏰ Jornada: <strong>{{ s.jornada?.nombre || 'Matutina' }}</strong>
+                </span>
+                @if (s.curso) {
+                  <span class="meta-item">
+                    📚 Curso: <strong>{{ s.curso.nombre }}</strong>
+                  </span>
+                }
+                @if (s.empleado) {
+                  <span class="meta-item">
+                    👨‍🏫 Instructor: <strong>{{ s.empleado.nombres }} {{ s.empleado.apellidos }}</strong>
+                  </span>
+                }
+              </div>
+
+              <div class="card-actions-row">
+                <button (click)="openQuickEditHorario(s.id, s.title)" class="btn btn-primary btn-sm">
+                  📅 Matriz Semanal
+                </button>
+                <button (click)="openEditModal(s)" class="btn btn-secondary btn-sm">
+                  ✏️ Editar
+                </button>
+                <button (click)="deleteSalon(s.id)" class="btn btn-danger btn-sm">
+                  🗑️
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- VISTA 4: CATÁLOGO DE JORNADAS -->
+  @if (activeView() === 'jornadas') {
+    <div class="jornadas-section">
+      <div class="jornadas-grid">
+        @for (j of jornadasList(); track j.id) {
+          <div class="card jornada-card">
+            <div class="jornada-icon-box">⏰</div>
+            <div class="jornada-info">
+              <h3 class="jornada-name">{{ j.nombre }}</h3>
+              <p class="jornada-time">
+                Horario Oficial: <strong>{{ j.horaInicio || j.horainicio || '07:30' }} - {{ j.horaFin || j.horafin || '12:30' }}</strong>
+              </p>
+              <span class="badge badge-success">Activa</span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- MODAL ASIGNAR HORARIO CON CATÁLOGO DE CURSOS -->
+  @if (showHorarioModal()) {
+    <app-modal [title]="'Asignación de Cursos: ' + activeHorarioEdit.salonTitle" maxWidth="580px" (close)="closeHorarioModal()">
+      <form (ngSubmit)="saveHorarioAssignment()">
+        <div class="form-group">
+          <label>Día de la Semana *</label>
+          <select
+            class="form-control"
+            [(ngModel)]="activeHorarioEdit.diaId"
+            (ngModelChange)="onDiaChange($event)"
+            name="diaId"
+            required
+          >
+            <option [ngValue]="1">Lunes</option>
+            <option [ngValue]="2">Martes</option>
+            <option [ngValue]="3">Miércoles</option>
+            <option [ngValue]="4">Jueves</option>
+            <option [ngValue]="5">Viernes</option>
+            <option [ngValue]="6">Sábado</option>
+            <option [ngValue]="7">Domingo</option>
+          </select>
+        </div>
+
+        <!-- Selector de Cursos para Mañana -->
+        <div class="form-group">
+          <label>🌅 Turno Mañana (07:30 - 12:30) - Seleccionar Curso</label>
+          <select class="form-control" [(ngModel)]="activeHorarioEdit.cursoManana" name="cursoManana">
+            <option value="">-- Libre / Disponible --</option>
+            @for (c of cursosList(); track c.id) {
+              <option [value]="c.nombre">{{ c.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Selector de Cursos para Tarde -->
+        <div class="form-group">
+          <label>☀️ Turno Tarde (13:00 - 17:30) - Seleccionar Curso</label>
+          <select class="form-control" [(ngModel)]="activeHorarioEdit.cursoTarde" name="cursoTarde">
+            <option value="">-- Libre / Disponible --</option>
+            @for (c of cursosList(); track c.id) {
+              <option [value]="c.nombre">{{ c.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Selector de Cursos para Noche -->
+        <div class="form-group">
+          <label>🌙 Turno Noche (18:00 - 21:30) - Seleccionar Curso</label>
+          <select class="form-control" [(ngModel)]="activeHorarioEdit.cursoNoche" name="cursoNoche">
+            <option value="">-- Libre / Disponible --</option>
+            @for (c of cursosList(); track c.id) {
+              <option [value]="c.nombre">{{ c.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" (click)="closeHorarioModal()" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            {{ saving() ? 'Guardando...' : 'Guardar Asignación' }}
+          </button>
+        </div>
+      </form>
+    </app-modal>
+  }
+
+  <!-- MODAL CREAR / EDITAR ESPACIO -->
+  @if (showSalonModal()) {
+    <app-modal [title]="isEditingSalon() ? 'Editar Espacio #' + activeSalon.id : 'Registrar Nuevo Salón o Taller'" maxWidth="580px" (close)="closeSalonModal()">
+      <form (ngSubmit)="saveSalon()">
+        <div class="form-group">
+          <label>Nombre del Salón o Taller *</label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Ej: Taller de Electricidad Industrial T-1"
+            [(ngModel)]="activeSalon.title"
+            name="title"
+            required
+          />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-6">
+            <label>Tipo de Espacio *</label>
+            <select class="form-control" [(ngModel)]="activeSalon.tipoSalon" name="tipoSalon" required>
+              <option [ngValue]="1">🏛️ Salón Teórico / Aula</option>
+              <option [ngValue]="0">⚡ Taller Práctico Técnico</option>
+            </select>
+          </div>
+          <div class="form-group col-6">
+            <label>Capacidad (Personas) *</label>
+            <input
+              type="number"
+              class="form-control"
+              [(ngModel)]="activeSalon.cantidadPersonas"
+              name="cantidadPersonas"
+              min="1"
+              max="100"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Jornada Principal *</label>
+          <select class="form-control" [(ngModel)]="activeSalon.jornadaId" name="jornadaId">
+            <option [ngValue]="undefined">-- Seleccionar Jornada --</option>
+            @for (j of jornadasList(); track j.id) {
+              <option [ngValue]="j.id">{{ j.nombre }} ({{ j.horaInicio || j.horainicio || '07:30' }} - {{ j.horaFin || j.horafin || '12:30' }})</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Curso Asignado por Defecto</label>
+          <select class="form-control" [(ngModel)]="activeSalon.cursoId" name="cursoId">
+            <option [ngValue]="undefined">-- Ninguno / Sin Asignar --</option>
+            @for (c of cursosList(); track c.id) {
+              <option [ngValue]="c.id">{{ c.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Docente / Instructor Responsable</label>
+          <select class="form-control" [(ngModel)]="activeSalon.empleadoId" name="empleadoId">
+            <option [ngValue]="undefined">-- Sin Instructor Asignado --</option>
+            @for (e of empleadosList(); track e.id) {
+              <option [ngValue]="e.id">{{ e.nombres }} {{ e.apellidos }} ({{ e.profesion || 'Docente' }})</option>
+            }
+          </select>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" (click)="closeSalonModal()" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            {{ saving() ? 'Guardando...' : 'Guardar Espacio' }}
+          </button>
+        </div>
+      </form>
+    </app-modal>
+  }
+
+  <!-- MODAL CREAR JORNADA -->
+  @if (showJornadaModal()) {
+    <app-modal title="Registrar Horario / Jornada" (close)="showJornadaModal.set(false)">
+      <form (ngSubmit)="saveJornada()">
+        <div class="form-group">
+          <label>Nombre de la Jornada *</label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Ej: Matutina, Vespertina, Fin de Semana"
+            [(ngModel)]="newJornada.nombre"
+            name="nombre"
+            required
+          />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-6">
+            <label>Hora Inicio *</label>
+            <input
+              type="time"
+              class="form-control"
+              [(ngModel)]="newJornada.horaInicio"
+              name="horaInicio"
+              required
+            />
+          </div>
+          <div class="form-group col-6">
+            <label>Hora Fin *</label>
+            <input
+              type="time"
+              class="form-control"
+              [(ngModel)]="newJornada.horaFin"
+              name="horaFin"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" (click)="showJornadaModal.set(false)" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            {{ saving() ? 'Guardando...' : 'Guardar Jornada' }}
+          </button>
+        </div>
+      </form>
+    </app-modal>
+  }
+</div>

@@ -1,0 +1,293 @@
+<div class="empleados-page">
+  <app-page-header
+    title="Personal y Puestos de Trabajo"
+    subtitle="Administración de instructores, catedráticos y catálogo oficial de puestos del empleado.">
+    <div header-actions>
+      @if (activeTab() === 'empleados') {
+        <button (click)="openEmpleadoModal()" class="btn btn-primary">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+          </svg>
+          Nuevo Empleado
+        </button>
+      } @else {
+        <button (click)="openPuestoModal()" class="btn btn-primary">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Nuevo Puesto
+        </button>
+      }
+    </div>
+  </app-page-header>
+
+  <!-- Navigation Tabs -->
+  <div class="nav-tabs-wrapper">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'empleados'"
+      (click)="activeTab.set('empleados')"
+    >
+      <span class="tab-icon">👨‍🏫</span>
+      Directorio de Empleados ({{ empleados().length }})
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'puestos'"
+      (click)="activeTab.set('puestos')"
+    >
+      <span class="tab-icon">💼</span>
+      Catálogo de Puestos del Empleado ({{ puestos().length }})
+    </button>
+  </div>
+
+  <!-- TAB 1: EMPLEADOS DIRECTORY -->
+  @if (activeTab() === 'empleados') {
+    <div class="search-bar card">
+      <svg class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input
+        type="text"
+        class="form-control search-input"
+        placeholder="Buscar por nombre, apellido, correo o profesión..."
+        [(ngModel)]="searchQuery"
+        (input)="onSearch()"
+      />
+    </div>
+
+    <div class="card table-card">
+      @if (loading()) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Cargando lista de personal...</p>
+        </div>
+      } @else if (empleados().length === 0) {
+        <app-empty-state icon="👨‍🏫" message="No se encontraron empleados registrados.">
+          <button (click)="openEmpleadoModal()" class="btn btn-primary btn-sm">Registrar Nuevo Empleado</button>
+        </app-empty-state>
+      } @else {
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre Completo</th>
+                <th>Puesto del Empleado</th>
+                <th>Correo Electrónico</th>
+                <th>Teléfono</th>
+                <th>Estado</th>
+                <th class="text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of empleados(); track e.id) {
+                <tr>
+                  <td class="font-mono text-muted">#{{ e.id }}</td>
+                  <td>
+                    <div class="user-meta">
+                      <div class="avatar-circle">{{ e.nombres.charAt(0) }}</div>
+                      <div>
+                        <div class="font-bold text-navy">{{ e.nombres }} {{ e.apellidos }}</div>
+                        <div class="text-xs text-muted">{{ e.profesion || 'Personal Docente' }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="puesto-tag">
+                      💼 {{ getPuestoName(e.tipoEmpleadoId) }}
+                    </span>
+                  </td>
+                  <td>{{ e.email || '-' }}</td>
+                  <td>{{ e.telefono || '-' }}</td>
+                  <td><span class="badge badge-success">Activo</span></td>
+                  <td class="text-right">
+                    <div class="action-btns">
+                      <button (click)="editEmpleado(e)" class="action-btn btn-edit" title="Editar Empleado">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button (click)="deleteEmpleado(e.id)" class="action-btn btn-delete" title="Desactivar Empleado">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- TAB 2: CATÁLOGO DE PUESTOS DEL EMPLEADO -->
+  @if (activeTab() === 'puestos') {
+    <div class="card table-card">
+      <div class="card-header-bar">
+        <div>
+          <h3>Puestos y Cargos de la Institución</h3>
+          <p class="text-xs text-muted">Configuración de perfiles laborales para el personal y docentes INTECAP.</p>
+        </div>
+        <button (click)="openPuestoModal()" class="btn btn-outline btn-sm">
+          + Agregar Nuevo Puesto
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 80px;">ID</th>
+              <th>Nombre del Puesto del Empleado</th>
+              <th>Estado</th>
+              <th class="text-right" style="width: 140px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of puestos(); track p.id) {
+              <tr>
+                <td class="font-mono text-muted">#{{ p.id }}</td>
+                <td>
+                  <div class="font-bold text-navy">
+                    💼 {{ p.name || p.tipoEmpleado }}
+                  </div>
+                </td>
+                <td>
+                  <span class="badge" [class.badge-success]="p.estado === 1" [class.badge-danger]="p.estado === 0">
+                    {{ p.estado === 1 ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td class="text-right">
+                  <div class="action-btns">
+                    <button (click)="editPuesto(p)" class="action-btn btn-edit" title="Editar Puesto">
+                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    <button (click)="deletePuesto(p.id)" class="action-btn btn-delete" title="Desactivar Puesto">
+                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL EMPLEADO -->
+  @if (showEmpModal()) {
+    <app-modal [title]="isEditingEmp() ? 'Editar Empleado' : 'Registrar Empleado'" (close)="closeEmpleadoModal()">
+      <form (ngSubmit)="saveEmpleado()">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombres *</label>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Ej: Juan Carlos"
+              [(ngModel)]="activeEmp.nombres"
+              name="nombres"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label>Apellidos *</label>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Ej: Pérez Gómez"
+              [(ngModel)]="activeEmp.apellidos"
+              name="apellidos"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Puesto del Empleado *</label>
+          <select class="form-control" [(ngModel)]="activeEmp.tipoEmpleadoId" name="tipoEmpleadoId" required>
+            @for (t of puestos(); track t.id) {
+              <option [value]="t.id">{{ t.name || t.tipoEmpleado }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Correo Electrónico</label>
+            <input
+              type="email"
+              class="form-control"
+              placeholder="ejemplo@intecap.edu.gt"
+              [(ngModel)]="activeEmp.email"
+              name="email"
+            />
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="5555-4444"
+              [(ngModel)]="activeEmp.telefono"
+              name="telefono"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Dirección</label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Zona, Ciudad o Municipio"
+            [(ngModel)]="activeEmp.direccion"
+            name="direccion"
+          />
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" (click)="closeEmpleadoModal()" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-primary">
+            {{ isEditingEmp() ? 'Guardar Cambios' : 'Crear Empleado' }}
+          </button>
+        </div>
+      </form>
+    </app-modal>
+  }
+
+  <!-- MODAL PUESTO DEL EMPLEADO -->
+  @if (showPuestoModal()) {
+    <app-modal [title]="isEditingPuesto() ? 'Editar Puesto del Empleado' : 'Nuevo Puesto del Empleado'" (close)="closePuestoModal()">
+      <form (ngSubmit)="savePuesto()">
+        <div class="form-group">
+          <label>Nombre del Puesto *</label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Ej: Instructor de Tecnologías Web"
+            [(ngModel)]="activePuesto.name"
+            name="puestoName"
+            required
+          />
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" (click)="closePuestoModal()" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-primary">
+            {{ isEditingPuesto() ? 'Actualizar Puesto' : 'Crear Puesto' }}
+          </button>
+        </div>
+      </form>
+    </app-modal>
+  }
+</div>

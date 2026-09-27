@@ -1,0 +1,160 @@
+<div class="dashboard-page">
+  <!-- Welcome Hero Banner -->
+  <div class="hero-banner">
+    <div class="hero-content">
+      <div class="hero-badge">PORTAL ADMINISTRATIVO</div>
+      <h1>Bienvenido, {{ authService.currentUser()?.username }}</h1>
+      <p>Supervisa salones, ocupación, reservaciones activas y personal docente en tiempo real.</p>
+    </div>
+    <div class="hero-actions">
+      <a routerLink="/reservaciones" class="btn btn-gold">
+        <svg class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Nueva Reservación
+      </a>
+      <a routerLink="/salones" class="btn btn-secondary">Ver Salones</a>
+    </div>
+  </div>
+
+  <!-- Stat KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon-wrapper bg-blue">
+        <svg class="kpi-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      </div>
+      <div class="kpi-info">
+        <div class="kpi-label">Salones de Clase</div>
+        <div class="kpi-value">{{ totalSalones() }}</div>
+        <div class="kpi-subtext">Espacios teóricos</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrapper bg-gold">
+        <svg class="kpi-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      </div>
+      <div class="kpi-info">
+        <div class="kpi-label">Talleres Prácticos</div>
+        <div class="kpi-value">{{ totalTalleres() }}</div>
+        <div class="kpi-subtext">Laboratorios técnicos</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrapper bg-navy">
+        <svg class="kpi-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      </div>
+      <div class="kpi-info">
+        <div class="kpi-label">Docentes / Personal</div>
+        <div class="kpi-value">{{ totalEmpleados() }}</div>
+        <div class="kpi-subtext">Instructores activos</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrapper bg-green">
+        <svg class="kpi-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      </div>
+      <div class="kpi-info">
+        <div class="kpi-label">Reservaciones</div>
+        <div class="kpi-value">{{ totalReservaciones() }}</div>
+        <div class="kpi-subtext">Eventos registrados</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Action Panels Grid -->
+  <div class="dashboard-grid">
+    <!-- Recent Reservations -->
+    <div class="card panel-card">
+      <div class="panel-header">
+        <h3>Reservaciones Recientes</h3>
+        <a routerLink="/reservaciones" class="view-all">Ver todas →</a>
+      </div>
+
+      @if (recentReservaciones().length === 0) {
+        <app-empty-state
+          icon="📅"
+          title="No hay reservaciones recientes"
+          message="No se encontraron eventos activos en el sistema.">
+          <a routerLink="/reservaciones" class="btn btn-primary btn-sm">Crear primera reservación</a>
+        </app-empty-state>
+      } @else {
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Salón / Taller</th>
+                <th>Docente</th>
+                <th>Curso</th>
+                <th>Jornada</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of recentReservaciones(); track r.id) {
+                <tr>
+                  <td class="font-medium text-navy">{{ r.salon?.title || 'Salón #' + r.salonId }}</td>
+                  <td>{{ r.empleado ? r.empleado.nombres + ' ' + r.empleado.apellidos : '-' }}</td>
+                  <td>{{ r.curso?.nombre || '-' }}</td>
+                  <td>{{ r.jornada || 'General' }}</td>
+                  <td>
+                    <span class="badge badge-success">Confirmada</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <!-- System & Shortcuts -->
+    <div class="card panel-card">
+      <div class="panel-header">
+        <h3>Acceso Rápido</h3>
+      </div>
+      <div class="quick-links-grid">
+        <a routerLink="/salones" class="quick-link-box">
+          <div class="box-icon">🏛️</div>
+          <div class="box-title">Gestión de Salones</div>
+          <div class="box-desc">Distribución por días y mobiliario</div>
+        </a>
+
+        <a routerLink="/empleados" class="quick-link-box">
+          <div class="box-icon">👨‍🏫</div>
+          <div class="box-title">Directorio Docente</div>
+          <div class="box-desc">Instructores y roles asignados</div>
+        </a>
+
+        <a routerLink="/academico" class="quick-link-box">
+          <div class="box-icon">📚</div>
+          <div class="box-title">Cursos y Carreras</div>
+          <div class="box-desc">Oferta académica y jornadas</div>
+        </a>
+
+        <a routerLink="/calidad" class="quick-link-box">
+          <div class="box-icon">⭐</div>
+          <div class="box-title">Control de Calidad</div>
+          <div class="box-desc">Evaluación y seguimiento docente</div>
+        </a>
+
+        <a routerLink="/avisos" class="quick-link-box">
+          <div class="box-icon">📢</div>
+          <div class="box-title">Avisos & Pantalla TV</div>
+          <div class="box-desc">Gestión de alertas y marquesina TV</div>
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>

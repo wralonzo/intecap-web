@@ -1,0 +1,224 @@
+<div class="users-page">
+  <!-- Page Header -->
+  <app-page-header
+    title="Control de Cuentas y Usuarios"
+    subtitle="Gestión de credenciales, roles de acceso y vinculación con el personal institucional.">
+    <div header-actions>
+      <button (click)="openCreateModal()" class="btn btn-primary">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+        </svg>
+        Nuevo Usuario
+      </button>
+    </div>
+  </app-page-header>
+
+  <!-- Quick Metrics Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon bg-blue">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      </div>
+      <div>
+        <div class="stat-value">{{ users().length }}</div>
+        <div class="stat-label">Usuarios Totales</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon bg-gold">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+      </div>
+      <div>
+        <div class="stat-value">{{ adminCount() }}</div>
+        <div class="stat-label">Administradores (Staff)</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon bg-green">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <div>
+        <div class="stat-value">{{ activeCount() }}</div>
+        <div class="stat-label">Cuentas Activas</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search & Filters -->
+  <div class="search-bar card">
+    <svg class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+    <input
+      type="text"
+      class="form-control search-input"
+      placeholder="Buscar por usuario, nombre de empleado o correo..."
+      [(ngModel)]="searchTerm"
+    />
+  </div>
+
+  <!-- Users Table Card -->
+  <div class="card table-card">
+    @if (loading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Cargando lista de usuarios...</p>
+      </div>
+    } @else if (filteredUsers().length === 0) {
+      <app-empty-state icon="👥" message="No se encontraron usuarios registrados.">
+        <button (click)="openCreateModal()" class="btn btn-primary btn-sm">Crear Primer Usuario</button>
+      </app-empty-state>
+    } @else {
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 80px;">ID</th>
+              <th>Cuenta de Usuario</th>
+              <th>Empleado Vinculado</th>
+              <th>Puesto / Cargo</th>
+              <th>Nivel de Acceso</th>
+              <th>Estado</th>
+              <th class="text-right" style="width: 140px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (u of filteredUsers(); track u.id) {
+              <tr>
+                <td class="font-mono text-muted">#{{ u.id }}</td>
+                <td>
+                  <div class="user-meta">
+                    <div class="avatar-circle" [class.avatar-admin]="u.staff === 1">
+                      {{ u.username.charAt(0).toUpperCase() }}
+                    </div>
+                    <div>
+                      <div class="font-bold text-navy">&#64;{{ u.username }}</div>
+                      <div class="text-xs text-muted">{{ u.empleado?.email || 'Sin correo asociado' }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  @if (u.empleado) {
+                    <div class="font-semibold text-primary">
+                      {{ u.empleado.nombres }} {{ u.empleado.apellidos }}
+                    </div>
+                    <div class="text-xs text-muted">ID Empleado: #{{ u.empleado.id }}</div>
+                  } @else {
+                    <span class="text-muted italic">Cuenta de Sistema (Sin vincular)</span>
+                  }
+                </td>
+                <td>
+                  <span class="puesto-tag">
+                    💼 {{ u.empleado?.tipoEmpleado?.name || u.empleado?.tipoEmpleado?.tipoEmpleado || (u.staff === 1 ? 'Administrador' : 'Usuario Estándar') }}
+                  </span>
+                </td>
+                <td>
+                  @if (u.staff === 1) {
+                    <span class="badge badge-staff">🛡️ Administrador (Staff)</span>
+                  } @else {
+                    <span class="badge badge-normal">Docente / Usuario</span>
+                  }
+                </td>
+                <td>
+                  <span class="badge" [class.badge-success]="u.estado !== 0" [class.badge-danger]="u.estado === 0">
+                    {{ u.estado !== 0 ? '✓ Activo' : '✗ Inactivo' }}
+                  </span>
+                </td>
+                <td class="text-right">
+                  <div class="action-btns">
+                    <button (click)="openEditModal(u)" class="action-btn btn-edit" title="Editar Usuario">
+                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    <button (click)="deleteUser(u.id)" class="action-btn btn-delete" title="Desactivar Usuario">
+                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <!-- MODAL CREAR / EDITAR USUARIO -->
+  @if (showModal()) {
+    <app-modal [title]="isEditing() ? 'Modificar Cuenta de Usuario' : 'Crear Nueva Cuenta de Usuario'" (close)="closeModal()">
+      <form (ngSubmit)="saveUser()">
+        <div class="form-group">
+          <label>Nombre de Usuario (Username) *</label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Ej: jcperez"
+            [(ngModel)]="activeUser.username"
+            name="username"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label>{{ isEditing() ? 'Nueva Contraseña (Opcional - dejar en blanco para conservar)' : 'Contraseña de Acceso *' }}</label>
+          <input
+            type="password"
+            class="form-control"
+            [placeholder]="isEditing() ? '••••••••' : 'Ingresa contraseña segura'"
+            [(ngModel)]="activeUser.password"
+            name="password"
+            [required]="!isEditing()"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Vincular a Empleado / Docente</label>
+          <select class="form-control" [(ngModel)]="activeUser.empleadoId" name="empleadoId">
+            <option [ngValue]="null">-- Sin vincular (Cuenta administrativa general) --</option>
+            @for (emp of empleados(); track emp.id) {
+              <option [ngValue]="emp.id">
+                {{ emp.nombres }} {{ emp.apellidos }} ({{ emp.tipoEmpleado?.name || emp.tipoEmpleado?.tipoEmpleado || 'Docente' }})
+              </option>
+            }
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nivel de Permisos</label>
+            <select class="form-control" [(ngModel)]="activeUser.staff" name="staff">
+              <option [value]="0">Usuario Estándar (Docente / Instructor)</option>
+              <option [value]="1">Administrador (Acceso total Staff)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Estado de la Cuenta</label>
+            <select class="form-control" [(ngModel)]="activeUser.estado" name="estado">
+              <option [value]="1">Activo</option>
+              <option [value]="0">Inactivo / Bloqueado</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" (click)="closeModal()" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            {{ saving() ? 'Guardando...' : (isEditing() ? 'Guardar Cambios' : 'Crear Usuario') }}
+          </button>
+        </div>
+      </form>
+    </app-modal>
+  }
+</div>

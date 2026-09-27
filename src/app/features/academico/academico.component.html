@@ -1,0 +1,242 @@
+<div class="academico-page">
+  <app-page-header
+    title="Oferta Académica y Jornadas"
+    subtitle="Administración de programas de formación, carreras técnicas, cursos y jornadas de estudio.">
+  </app-page-header>
+
+  <div class="sections-grid">
+    <!-- Carreras Section -->
+    <div class="card section-card">
+      <div class="section-top">
+        <div>
+          <h3>🎓 Carreras Técnicas</h3>
+          <p class="section-subtitle">Programas de formación profesional y certificaciones</p>
+        </div>
+        <button (click)="openCarreraModal()" class="btn btn-primary btn-sm">+ Nueva Carrera</button>
+      </div>
+
+      <div class="items-list">
+        @for (c of carreras(); track c.id) {
+          <div class="item-row">
+            <div class="row-info">
+              <div class="title-line">
+                <span class="item-title">{{ c.nombre }}</span>
+                @if (c.codigo) {
+                  <span class="chip">{{ c.codigo }}</span>
+                }
+              </div>
+              @if (c.descripcion) {
+                <div class="item-subtitle">{{ c.descripcion }}</div>
+              }
+            </div>
+            <div class="item-actions">
+              <button (click)="openCarreraModal(c)" class="btn-icon btn-edit" title="Modificar carrera">
+                ✏️
+              </button>
+              <button (click)="deleteCarrera(c)" class="btn-icon btn-delete" title="Eliminar carrera">
+                🗑️
+              </button>
+            </div>
+          </div>
+        } @empty {
+          <app-empty-state message="No hay carreras técnicas registradas."></app-empty-state>
+        }
+      </div>
+    </div>
+
+    <!-- Cursos Section -->
+    <div class="card section-card span-2">
+      <div class="section-top">
+        <div>
+          <h3>📖 Cursos Modulares</h3>
+          <p class="section-subtitle">Gestión de cursos, modalidad (en línea / presencial) y catedrático asignado</p>
+        </div>
+        <button (click)="openCursoModal()" class="btn btn-gold btn-sm">+ Nuevo Curso</button>
+      </div>
+
+      <div class="items-list cursos-list">
+        @for (cur of cursos(); track cur.id) {
+          <div class="item-row curso-row">
+            <div class="curso-info">
+              <div class="curso-header-line">
+                <span class="item-title">{{ cur.nombre }}</span>
+                @if (cur.esEnLinea) {
+                  <span class="badge badge-online">🌐 En Línea</span>
+                } @else {
+                  <span class="badge badge-presencial">🏫 Presencial</span>
+                }
+                @if (cur.carrera) {
+                  <span class="badge badge-carrera">{{ cur.carrera.nombre }}</span>
+                }
+              </div>
+              @if (cur.descripcion) {
+                <div class="item-subtitle">{{ cur.descripcion }}</div>
+              }
+              <div class="curso-meta">
+                <span class="instructor-tag">
+                  👨‍🏫 Catedrático: 
+                  @if (cur.empleado) {
+                    <strong>{{ cur.empleado.nombres }} {{ cur.empleado.apellidos }}</strong>
+                  } @else {
+                    <em class="text-muted">No asignado</em>
+                  }
+                </span>
+              </div>
+            </div>
+            <div class="item-actions">
+              <button (click)="openCursoModal(cur)" class="btn-icon btn-edit" title="Modificar curso">
+                ✏️
+              </button>
+              <button (click)="deleteCurso(cur)" class="btn-icon btn-delete" title="Eliminar curso">
+                🗑️
+              </button>
+            </div>
+          </div>
+        } @empty {
+          <app-empty-state message="No hay cursos modulares registrados."></app-empty-state>
+        }
+      </div>
+    </div>
+
+    <!-- Jornadas Section -->
+    <div class="card section-card">
+      <div class="section-top">
+        <div>
+          <h3>⏰ Jornadas y Horarios</h3>
+          <p class="section-subtitle">Turnos y horarios lectivos para distribución de clases</p>
+        </div>
+        <button (click)="openJornadaModal()" class="btn btn-secondary btn-sm">+ Nueva Jornada</button>
+      </div>
+
+      <div class="items-list">
+        @for (j of jornadas(); track j.id) {
+          <div class="item-row">
+            <div class="row-info">
+              <span class="item-title">{{ j.nombre }}</span>
+              <div class="time-range">
+                <span class="chip">{{ j.horainicio || j.horaInicio || '07:30' }} - {{ j.horafin || j.horaFin || '12:30' }}</span>
+              </div>
+            </div>
+            <div class="item-actions">
+              <button (click)="openJornadaModal(j)" class="btn-icon btn-edit" title="Modificar jornada">
+                ✏️
+              </button>
+              <button (click)="deleteJornada(j)" class="btn-icon btn-delete" title="Eliminar jornada">
+                🗑️
+              </button>
+            </div>
+          </div>
+        } @empty {
+          <app-empty-state message="No hay jornadas registradas."></app-empty-state>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Carrera -->
+  @if (activeModal() === 'carrera') {
+    <app-modal [title]="modalTitle()" (close)="closeModal()">
+      <form (ngSubmit)="saveCarrera()">
+        <div class="form-group">
+          <label>Nombre de la Carrera *</label>
+          <input type="text" class="form-control" placeholder="Ej: Técnico en Mecatrónica" [(ngModel)]="carreraName" name="carreraName" required />
+        </div>
+        <div class="form-group">
+          <label>Código de Carrera</label>
+          <input type="text" class="form-control" placeholder="Ej: MEC-01" [(ngModel)]="carreraCodigo" name="carreraCodigo" />
+        </div>
+        <div class="form-group">
+          <label>Descripción</label>
+          <textarea class="form-control" rows="2" placeholder="Detalle o descripción de la carrera..." [(ngModel)]="carreraDescripcion" name="carreraDescripcion"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" (click)="closeModal()" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-gold">
+            {{ editingCarreraId ? 'Guardar Cambios' : 'Guardar Carrera' }}
+          </button>
+        </div>
+      </form>
+    </app-modal>
+  }
+
+  <!-- Modal Curso -->
+  @if (activeModal() === 'curso') {
+    <app-modal [title]="modalTitle()" maxWidth="580px" (close)="closeModal()">
+      <form (ngSubmit)="saveCurso()">
+        <div class="form-group">
+          <label>Nombre del Curso *</label>
+          <input type="text" class="form-control" placeholder="Ej: Electrónica Industrial" [(ngModel)]="cursoName" name="cursoName" required />
+        </div>
+
+        <div class="form-group">
+          <label>Descripción</label>
+          <textarea class="form-control" rows="2" placeholder="Breve descripción del contenido o módulos del curso..." [(ngModel)]="cursoDescripcion" name="cursoDescripcion"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Carrera Vinculada</label>
+            <select class="form-control" [(ngModel)]="selectedCarreraId" name="selectedCarreraId">
+              <option [ngValue]="null">Ninguna (Curso Libre)</option>
+              @for (c of carreras(); track c.id) {
+                <option [ngValue]="c.id">{{ c.nombre }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Catedrático / Docente Asignado</label>
+            <select class="form-control" [(ngModel)]="selectedEmpleadoId" name="selectedEmpleadoId">
+              <option [ngValue]="null">Sin Catedrático Asignado</option>
+              @for (emp of empleados(); track emp.id) {
+                <option [ngValue]="emp.id">{{ emp.nombres }} {{ emp.apellidos }} ({{ emp.profesion || 'Docente' }})</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="cursoEsEnLinea" name="cursoEsEnLinea" />
+            <span>🌐 ¿Se imparte en línea? (Modalidad Virtual / Online)</span>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" (click)="closeModal()" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-gold">
+            {{ editingCursoId ? 'Guardar Cambios' : 'Registrar Curso' }}
+          </button>
+        </div>
+      </form>
+    </app-modal>
+  }
+
+  <!-- Modal Jornada -->
+  @if (activeModal() === 'jornada') {
+    <app-modal [title]="modalTitle()" (close)="closeModal()">
+      <form (ngSubmit)="saveJornada()">
+        <div class="form-group">
+          <label>Nombre de la Jornada *</label>
+          <input type="text" class="form-control" placeholder="Ej: Matutina" [(ngModel)]="jornadaName" name="jornadaName" required />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Hora Inicio</label>
+            <input type="time" class="form-control" [(ngModel)]="jornadaStart" name="jornadaStart" />
+          </div>
+          <div class="form-group">
+            <label>Hora Fin</label>
+            <input type="time" class="form-control" [(ngModel)]="jornadaEnd" name="jornadaEnd" />
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" (click)="closeModal()" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-gold">
+            {{ editingJornadaId ? 'Guardar Cambios' : 'Guardar Jornada' }}
+          </button>
+        </div>
+      </form>
+    </app-modal>
+  }
+</div>

@@ -10,6 +10,7 @@ export class WebSocketService {
   private socket: Socket | null = null;
   private readonly disponibilidad$ = new Subject<any>();
   private readonly reservaciones$ = new Subject<any>();
+  private readonly avisos$ = new Subject<any>();
 
   constructor(private ngZone: NgZone) {
     this.connect();
@@ -54,6 +55,13 @@ export class WebSocketService {
         });
       });
 
+      this.socket.on('avisos_actualizados', (data) => {
+        console.log('📡 [WS] Evento recibido: avisos_actualizados', data);
+        this.ngZone.run(() => {
+          this.avisos$.next(data);
+        });
+      });
+
       this.socket.on('disconnect', (reason) => {
         console.log('⚠️ Desconectado del WebSocket de INTECAP RealTime:', reason);
       });
@@ -69,6 +77,11 @@ export class WebSocketService {
   onNuevaReservacion(): Observable<any> {
     return this.reservaciones$.asObservable();
   }
+
+  onAvisosUpdate(): Observable<any> {
+    return this.avisos$.asObservable();
+  }
+
 
   ping() {
     if (this.socket && this.socket.connected) {

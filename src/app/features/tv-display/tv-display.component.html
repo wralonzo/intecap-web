@@ -1,0 +1,221 @@
+<div class="tv-container" [class.fullscreen]="isFullscreen()">
+  <!-- Top TV Header -->
+  <header class="tv-header">
+    <div class="tv-brand">
+      <div class="brand-badge">INTECAP</div>
+      <div class="brand-titles">
+        <h1 class="tv-main-title">PROGRAMACIÓN Y ASIGNACIÓN DE SALONES Y TALLERES</h1>
+        <p class="tv-subtitle">PANEL INFORMATIVO EN TIEMPO REAL PARA ESTUDIANTES Y DOCENTES</p>
+      </div>
+    </div>
+
+    <div class="tv-header-center">
+      <div class="shift-badge">
+        <span class="shift-icon">{{ currentTurnoIcon() }}</span>
+        <div class="shift-text">
+          <span class="shift-label">TURNO ACTUAL</span>
+          <span class="shift-name">{{ currentTurnoNombre() }}</span>
+        </div>
+      </div>
+
+      <div class="live-indicator">
+        <span class="pulse-ring"></span>
+        <span class="live-dot"></span>
+        <span class="live-text">TRANSMISIÓN EN VIVO</span>
+      </div>
+    </div>
+
+    <div class="tv-clock-panel">
+      <div class="tv-clock-box">
+        <div class="tv-time">{{ currentTime() }}</div>
+        <div class="tv-date">{{ currentDate() }}</div>
+      </div>
+      <div class="tv-controls">
+        <button class="tv-btn" (click)="toggleFullscreen()" [title]="isFullscreen() ? 'Salir de pantalla completa' : 'Pantalla completa'">
+          <svg class="tv-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            @if (!isFullscreen()) {
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0 0l-5-5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            } @else {
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            }
+          </svg>
+        </button>
+        <a routerLink="/dashboard" class="tv-btn" title="Volver al Panel Administrativo">
+          <svg class="tv-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Urgent High-Priority Alert Banner if active -->
+  @if (urgentNotice()) {
+    <div class="tv-urgent-banner">
+      <span class="urgent-pulse">🚨 AVISO URGENTE</span>
+      <span class="urgent-title font-bold">{{ urgentNotice()?.titulo }}:</span>
+      <span class="urgent-body">{{ urgentNotice()?.contenido }}</span>
+    </div>
+  }
+
+  <!-- KPI Summary Bar & Category Filter & TV Rotation Controls -->
+  <div class="tv-stats-bar">
+    <div class="tv-filter-chips">
+      <button class="chip-filter" [class.active]="filterCategory() === 'todos'" (click)="setFilter('todos')">
+        🏢 Todos los Espacios ({{ totalCount() }})
+      </button>
+      <button class="chip-filter chip-talleres" [class.active]="filterCategory() === 'talleres'" (click)="setFilter('talleres')">
+        🔧 Solo Talleres Técnicos ({{ talleresCount() }})
+      </button>
+      <button class="chip-filter chip-salones" [class.active]="filterCategory() === 'salones'" (click)="setFilter('salones')">
+        🏛️ Solo Aulas Teóricas ({{ salonesCount() }})
+      </button>
+      <button class="chip-filter chip-en-clase" [class.active]="filterCategory() === 'ocupados'" (click)="setFilter('ocupados')">
+        🟢 En Clase Ahora ({{ ocupadosCount() }})
+      </button>
+      <button class="chip-filter chip-libres" [class.active]="filterCategory() === 'libres'" (click)="setFilter('libres')">
+        🔵 Libres / Disponibles ({{ disponiblesCount() }})
+      </button>
+    </div>
+
+    <div class="tv-bar-right">
+      <!-- KPI Summary -->
+      <div class="tv-kpi-summary">
+        <div class="kpi-mini">
+          <span class="kpi-num text-emerald">{{ ocupadosCount() }}</span>
+          <span class="kpi-lbl">En Clase</span>
+        </div>
+        <div class="kpi-divider"></div>
+        <div class="kpi-mini">
+          <span class="kpi-num text-sky">{{ disponiblesCount() }}</span>
+          <span class="kpi-lbl">Libres</span>
+        </div>
+        <div class="kpi-divider"></div>
+        <div class="kpi-mini">
+          <span class="kpi-num text-gold">{{ porcentajeOcupacion() }}%</span>
+          <span class="kpi-lbl">Ocupación</span>
+        </div>
+      </div>
+
+      <!-- TV Multi-Page Rotation Controls for Smart TV / Kiosk -->
+      @if (totalPages() > 1) {
+        <div class="tv-pagination-widget">
+          <button class="page-nav-btn" (click)="prevPage()" title="Página anterior">
+            ‹
+          </button>
+
+          <div class="page-info-box">
+            <span class="page-text">Pág. {{ currentPage() }}/{{ totalPages() }}</span>
+            <div class="rotation-progress-track" [title]="autoRotate() ? 'Rotación automática activa (' + (12 - currentProgressSeconds()) + 's)' : 'Rotación en pausa'">
+              <div class="rotation-progress-bar" [style.width.%]="autoRotate() ? progressPercent() : 0"></div>
+            </div>
+          </div>
+
+          <button class="page-nav-btn" (click)="nextPage()" title="Página siguiente">
+            ›
+          </button>
+
+          <button class="page-toggle-btn" (click)="toggleAutoRotate()" [title]="autoRotate() ? 'Pausar rotación automática de pantallas' : 'Reanudar rotación automática de pantallas'">
+            {{ autoRotate() ? '⏸️' : '▶️' }}
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- TV Main Content Grid -->
+  <main class="tv-body">
+    @if (loading()) {
+      <div class="tv-loading">
+        <div class="tv-spinner"></div>
+        <h2>Sincronizando información de salones en tiempo real...</h2>
+      </div>
+    } @else if (filteredSalones().length === 0) {
+      <div class="tv-empty">
+        <div class="empty-icon">🏛️</div>
+        <h2>No se encontraron salones que coincidan con el filtro</h2>
+      </div>
+    } @else {
+      <div class="tv-grid" [class.page-transition]="isTransitioning()">
+        @for (s of paginatedSalones(); track s.id) {
+          <div class="tv-card" [class.occupied]="isOcupado(s)" [class.available]="!isOcupado(s)">
+            <!-- Card Header -->
+            <div class="card-top">
+              <div class="space-identity">
+                <span class="space-type-tag" [class.tag-taller]="s.tipoSalon === 0" [class.tag-salon]="s.tipoSalon === 1">
+                  {{ s.tipoSalon === 0 ? '🔧 TALLER' : '🏛️ AULA' }}
+                </span>
+                <h2 class="space-title">{{ s.title }}</h2>
+              </div>
+
+              <div class="space-status-badge" [class.status-in-class]="isOcupado(s)" [class.status-free]="!isOcupado(s)">
+                @if (isOcupado(s)) {
+                  <span class="status-dot green"></span>
+                  <span class="status-text">EN CLASE</span>
+                } @else {
+                  <span class="status-dot blue"></span>
+                  <span class="status-text">DISPONIBLE</span>
+                }
+              </div>
+            </div>
+
+            <!-- Card Body (Current Course & Details) -->
+            <div class="card-main-info">
+              @if (isOcupado(s)) {
+                <div class="active-course-box">
+                  <span class="course-label">CURSO O ESPECIALIDAD EN IMPARTICIÓN:</span>
+                  <h3 class="course-title">{{ getCursoActual(s) || 'Capacitación Técnica INTECAP' }}</h3>
+                  
+                  <div class="course-details">
+                    <div class="detail-item">
+                      <span class="detail-icon">👥</span>
+                      <span class="detail-val font-semibold">Capacidad: {{ s.cantidadPersonas }} estudiantes</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-icon">⏰</span>
+                      <span class="detail-val">{{ currentTurnoHorario() }}</span>
+                    </div>
+                  </div>
+                </div>
+              } @else {
+                <div class="free-space-box">
+                  <div class="free-icon">✨</div>
+                  <div class="free-text">
+                    <h4>Espacio Disponible</h4>
+                    <p>Libre para prácticas de taller, estudio guiado o asignación de grupo.</p>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Daily Schedule Mini-Timeline -->
+            <div class="card-footer-schedule">
+              <div class="shift-slot" [class.active-slot]="isShiftNow('manana')" [class.has-class]="s.turnos.manana.ocupado">
+                <span class="slot-name">Mañana</span>
+                <span class="slot-course">{{ s.turnos.manana.curso || 'Libre' }}</span>
+              </div>
+              <div class="shift-slot" [class.active-slot]="isShiftNow('tarde')" [class.has-class]="s.turnos.tarde.ocupado">
+                <span class="slot-name">Tarde</span>
+                <span class="slot-course">{{ s.turnos.tarde.curso || 'Libre' }}</span>
+              </div>
+              <div class="shift-slot" [class.active-slot]="isShiftNow('noche')" [class.has-class]="s.turnos.noche.ocupado">
+                <span class="slot-name">Noche</span>
+                <span class="slot-course">{{ s.turnos.noche.curso || 'Libre' }}</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </main>
+
+  <!-- Bottom Info Ticker (Dynamic Real-Time Announcements) -->
+  <footer class="tv-footer-ticker">
+    <div class="ticker-badge">📢 AVISOS INTECAP</div>
+    <div class="ticker-track">
+      <div class="ticker-content">
+        {{ tickerText() }}
+      </div>
+    </div>
+  </footer>
+</div>

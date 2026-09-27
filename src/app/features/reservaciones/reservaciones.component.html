@@ -1,0 +1,516 @@
+<div class="reservaciones-page">
+  <!-- Page Header -->
+  <app-page-header
+    title="Reservación de Eventos Especiales y Salones"
+    subtitle="Administración de solicitudes para talleres únicos, seminarios, certificaciones y eventos específicos con control de aprobación y bitácora.">
+    <div header-actions>
+      <button (click)="openCreateModal()" class="btn btn-gold">
+        <svg class="icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Solicitar Nuevo Evento
+      </button>
+    </div>
+  </app-page-header>
+
+  <!-- KPI Summary Cards -->
+  <div class="stats-grid">
+    <div class="stat-card" [class.active-filter]="filterEstado() === null" (click)="setFilterEstado(null)">
+      <div class="stat-icon bg-navy-light">📜</div>
+      <div class="stat-info">
+        <span class="stat-label">Total Solicitudes</span>
+        <span class="stat-value">{{ stats().total }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card stat-pending" [class.active-filter]="filterEstado() === 1" (click)="setFilterEstado(1)">
+      <div class="stat-icon bg-amber-light">⏳</div>
+      <div class="stat-info">
+        <span class="stat-label">Pendientes de Aprobación</span>
+        <span class="stat-value text-amber">{{ stats().pendientes }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card stat-approved" [class.active-filter]="filterEstado() === 2" (click)="setFilterEstado(2)">
+      <div class="stat-icon bg-emerald-light">✅</div>
+      <div class="stat-info">
+        <span class="stat-label">Eventos Aprobados</span>
+        <span class="stat-value text-emerald">{{ stats().aprobadas }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card stat-rejected" [class.active-filter]="filterEstado() === 3" (click)="setFilterEstado(3)">
+      <div class="stat-icon bg-rose-light">❌</div>
+      <div class="stat-info">
+        <span class="stat-label">Rechazadas / Canceladas</span>
+        <span class="stat-value text-rose">{{ stats().rechazadas }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card" [class.active-filter]="filterEstado() === 4" (click)="setFilterEstado(4)">
+      <div class="stat-icon bg-blue-light">🏁</div>
+      <div class="stat-info">
+        <span class="stat-label">Eventos Finalizados</span>
+        <span class="stat-value">{{ stats().finalizadas }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter and Search Bar -->
+  <div class="card filter-bar-card">
+    <div class="filter-row">
+      <div class="search-box">
+        <svg class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Buscar por salón, curso, instructor, motivo o tipo de evento..."
+          [(ngModel)]="searchQuery"
+          (input)="onSearchChange()"
+        />
+        @if (searchQuery) {
+          <button class="clear-search-btn" (click)="clearSearch()">&times;</button>
+        }
+      </div>
+
+      <!-- State Tab Pills -->
+      <div class="state-pills">
+        <button
+          class="pill-btn"
+          [class.active]="filterEstado() === null"
+          (click)="setFilterEstado(null)"
+        >
+          Todos ({{ stats().total }})
+        </button>
+        <button
+          class="pill-btn pill-pending"
+          [class.active]="filterEstado() === 1"
+          (click)="setFilterEstado(1)"
+        >
+          ⏳ Pendientes ({{ stats().pendientes }})
+        </button>
+        <button
+          class="pill-btn pill-approved"
+          [class.active]="filterEstado() === 2"
+          (click)="setFilterEstado(2)"
+        >
+          ✅ Aprobados ({{ stats().aprobadas }})
+        </button>
+        <button
+          class="pill-btn pill-rejected"
+          [class.active]="filterEstado() === 3"
+          (click)="setFilterEstado(3)"
+        >
+          ❌ Rechazados ({{ stats().rechazadas }})
+        </button>
+        <button
+          class="pill-btn pill-finished"
+          [class.active]="filterEstado() === 4"
+          (click)="setFilterEstado(4)"
+        >
+          🏁 Finalizados ({{ stats().finalizadas }})
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table / Cards of Reservations -->
+  <div class="card table-card">
+    @if (loading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Cargando solicitudes y auditoría de eventos...</p>
+      </div>
+    } @else if (reservaciones().length === 0) {
+      <app-empty-state icon="📅" message="No se encontraron solicitudes de reservación que coincidan con los filtros seleccionados.">
+        <button (click)="openCreateModal()" class="btn btn-primary btn-sm">Crear Nueva Solicitud</button>
+      </app-empty-state>
+    } @else {
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 22%;">Espacio / Salón</th>
+              <th style="width: 16%;">Tipo de Evento</th>
+              <th style="width: 18%;">Fecha y Horario</th>
+              <th style="width: 20%;">Docente / Curso</th>
+              <th style="width: 8%;">Asistentes</th>
+              <th style="width: 10%;">Estado</th>
+              <th style="width: 6%; text-align: right;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of reservaciones(); track r.id) {
+              <tr>
+                <td>
+                  <div class="cell-main font-bold text-navy">
+                    {{ r.salon?.title || 'Salón #' + r.salonId }}
+                  </div>
+                </td>
+                <td>
+                  <span class="event-pill">{{ r.tipoEvento || 'Taller Especial' }}</span>
+                </td>
+                <td>
+                  <div class="cell-main">
+                    {{ r.fechaEvento || (r.createdAt | date:'yyyy-MM-dd') }}
+                  </div>
+                  <div class="cell-sub">
+                    {{ r.horaInicio || '08:00' }} - {{ r.horaFin || '12:00' }}
+                  </div>
+                </td>
+                <td>
+                  <div class="cell-main">
+                    {{ r.empleado ? r.empleado.nombres + ' ' + r.empleado.apellidos : 'Sin asignar' }}
+                  </div>
+                  <div class="cell-sub text-truncate">
+                    {{ r.curso?.nombre || 'Capacitación' }}
+                  </div>
+                </td>
+                <td>
+                  <span class="text-sm font-semibold">{{ r.cantidadPersonas }}</span>
+                </td>
+                <td>
+                  @switch (r.estado) {
+                    @case (1) {
+                      <span class="badge badge-warning">Pendiente</span>
+                    }
+                    @case (2) {
+                      <span class="badge badge-success">Aprobado</span>
+                    }
+                    @case (3) {
+                      <span class="badge badge-danger">Rechazado</span>
+                    }
+                    @case (4) {
+                      <span class="badge badge-secondary">Finalizado</span>
+                    }
+                    @default {
+                      <span class="badge badge-info">Registrado</span>
+                    }
+                  }
+                </td>
+                <td>
+                  <div class="action-buttons-group">
+                    @if (r.estado === 1) {
+                      <button
+                        (click)="aprobarReservacion(r)"
+                        class="btn-action-sm btn-approve"
+                        title="Aprobar Solicitud"
+                      >
+                        Aprobar
+                      </button>
+                    } @else if (r.estado === 2) {
+                      <button
+                        (click)="finalizarReservacion(r)"
+                        class="btn-action-sm btn-finish"
+                        title="Marcar como Finalizado"
+                      >
+                        Concluir
+                      </button>
+                    }
+
+                    <button
+                      (click)="openDetailModal(r)"
+                      class="btn-icon-btn"
+                      title="Ver detalle completo"
+                    >
+                      <svg class="icon-xs" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <!-- MODAL 1: Crear Solicitud de Evento / Reservación -->
+  @if (showCreateModal()) {
+    <app-modal title="Nueva Solicitud de Reservación de Evento" maxWidth="780px" (close)="closeCreateModal()">
+      <form (ngSubmit)="saveReservacion()">
+        <div class="modal-body-grid">
+          <!-- Tipo de Evento -->
+          <div class="form-group">
+            <label>Tipo de Evento Especial *</label>
+            <select class="form-control" [(ngModel)]="formRes.tipoEvento" name="tipoEvento" required>
+              <option value="Taller Especial">🔧 Taller Técnico Especial</option>
+              <option value="Seminario">🎓 Seminario / Conferencia</option>
+              <option value="Capacitación Empresarial">💼 Capacitación Empresarial</option>
+              <option value="Examen / Certificación">📝 Evaluación / Certificación</option>
+              <option value="Práctica de Laboratorio">🔬 Práctica de Laboratorio</option>
+              <option value="Reunión Institucional">🤝 Reunión Institucional / Evento</option>
+              <option value="Otro Evento">✨ Otro Evento Específico</option>
+            </select>
+          </div>
+
+          <!-- Salón o Taller -->
+          <div class="form-group">
+            <label>Espacio / Salón / Taller Solicitado *</label>
+            <select class="form-control" [(ngModel)]="formRes.salonId" name="salonId" required>
+              <option [ngValue]="null" disabled>-- Selecciona un espacio --</option>
+              @for (s of salonesList(); track s.id) {
+                <option [ngValue]="s.id">
+                  {{ s.title }} ({{ s.tipoSalon === 0 ? 'Taller' : 'Salón' }}) - Capacidad: {{ s.cantidadPersonas }} pax
+                </option>
+              }
+            </select>
+          </div>
+
+          <!-- Fecha del Evento -->
+          <div class="form-group">
+            <label>Fecha Programada del Evento *</label>
+            <input
+              type="date"
+              class="form-control"
+              [(ngModel)]="formRes.fechaEvento"
+              name="fechaEvento"
+              required
+            />
+          </div>
+
+          <!-- Horario de Inicio y Fin -->
+          <div class="form-group">
+            <label>Horario (Inicio - Fin) *</label>
+            <div class="time-range-group">
+              <input
+                type="time"
+                class="form-control"
+                [(ngModel)]="formRes.horaInicio"
+                name="horaInicio"
+                required
+              />
+              <span class="time-separator">a</span>
+              <input
+                type="time"
+                class="form-control"
+                [(ngModel)]="formRes.horaFin"
+                name="horaFin"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Instructor / Docente Responsable -->
+          <div class="form-group">
+            <label>Docente / Instructor Responsable *</label>
+            <select class="form-control" [(ngModel)]="formRes.empleadoId" name="empleadoId" required>
+              <option [ngValue]="null" disabled>-- Selecciona un instructor --</option>
+              @for (e of empleadosList(); track e.id) {
+                <option [ngValue]="e.id">
+                  {{ e.nombres }} {{ e.apellidos }} ({{ e.tipoEmpleado?.tipoEmpleado || 'Docente' }})
+                </option>
+              }
+            </select>
+          </div>
+
+          <!-- Curso / Tema -->
+          <div class="form-group">
+            <label>Curso o Especialidad Vinculada *</label>
+            <select class="form-control" [(ngModel)]="formRes.cursoId" name="cursoId" required>
+              <option [ngValue]="null" disabled>-- Selecciona un curso --</option>
+              @for (c of cursosList(); track c.id) {
+                <option [ngValue]="c.id">{{ c.nombre }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Jornada / Horario de Referencia -->
+          <div class="form-group">
+            <label>Jornada de Referencia</label>
+            <select class="form-control" [(ngModel)]="formRes.jornada" name="jornada">
+              <option value="Jornada Única">Jornada Única / Específica</option>
+              @for (j of jornadasList(); track j.id) {
+                <option [value]="j.nombre">{{ j.nombre }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Cantidad de Personas -->
+          <div class="form-group">
+            <label>Cantidad Estimada de Participantes *</label>
+            <input
+              type="number"
+              min="1"
+              class="form-control"
+              [(ngModel)]="formRes.cantidadPersonas"
+              name="cantidadPersonas"
+              required
+            />
+          </div>
+
+          <!-- Descripción y Justificación -->
+          <div class="form-group full-width">
+            <label>Descripción y Justificación del Evento *</label>
+            <textarea
+              class="form-control"
+              rows="3"
+              [(ngModel)]="formRes.descripcion"
+              name="descripcion"
+              placeholder="Describe el objetivo, requerimientos especiales de mobiliario/herramientas o contexto del evento..."
+              required
+            ></textarea>
+          </div>
+
+          <!-- Notas internas de seguimiento -->
+          <div class="form-group full-width">
+            <label>Bitácora / Notas de Seguimiento</label>
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="formRes.seguimiento"
+              name="seguimiento"
+              placeholder="Ej. Material didáctico entregado, confirmación de proyector, etc."
+            />
+          </div>
+
+          <!-- Estado Inicial -->
+          <div class="form-group full-width">
+            <label>Estado Inicial de la Solicitud</label>
+            <div class="radio-status-group">
+              <label class="radio-label">
+                <input type="radio" [(ngModel)]="formRes.estado" name="estado" [value]="1" />
+                <span>🟡 Enviar como Solicitud Pendiente (Flujo de Aprobación)</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" [(ngModel)]="formRes.estado" name="estado" [value]="2" />
+                <span>🟢 Registrar como Directamente Aprobada</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" (click)="closeCreateModal()" class="btn btn-outline">Cancelar</button>
+          <button type="submit" [disabled]="saving()" class="btn btn-gold">
+            {{ saving() ? 'Guardando...' : 'Guardar y Enviar Solicitud' }}
+          </button>
+        </div>
+      </form>
+    </app-modal>
+  }
+
+  <!-- MODAL 2: Rechazar Solicitud con Motivo -->
+  @if (showRechazoModal() && selectedRes()) {
+    <app-modal [title]="'Rechazar Solicitud #' + selectedRes()?.id" maxWidth="480px" (close)="closeRechazoModal()">
+      <div class="modal-body-content">
+        <p class="modal-desc">
+          Indica el motivo por el cual se rechaza o cancela la reservación del espacio <strong>{{ selectedRes()?.salon?.title }}</strong>:
+        </p>
+        <div class="form-group">
+          <label>Motivo de Rechazo *</label>
+          <textarea
+            class="form-control"
+            rows="3"
+            [(ngModel)]="motivoRechazoText"
+            placeholder="Ej. Conflicto de horario con curso curricular, mantenimiento de taller programado..."
+            required
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" (click)="closeRechazoModal()" class="btn btn-outline">Cancelar</button>
+        <button type="button" (click)="confirmarRechazo()" [disabled]="!motivoRechazoText.trim()" class="btn btn-danger">
+          Confirmar Rechazo
+        </button>
+      </div>
+    </app-modal>
+  }
+
+  <!-- MODAL 3: Detalle Completo de Auditoría y Bitácora -->
+  @if (showDetailModal() && selectedRes()) {
+    <app-modal [title]="'Detalle de Reservación #' + selectedRes()?.id" maxWidth="640px" (close)="closeDetailModal()">
+      <div class="audit-body">
+        <!-- Header Summary Grid -->
+        <div class="audit-header-grid">
+          <div class="audit-item">
+            <span class="audit-label">Tipo de Evento</span>
+            <span class="audit-value font-bold text-navy">{{ selectedRes()?.tipoEvento || 'Taller Especial' }}</span>
+          </div>
+
+          <div class="audit-item">
+            <span class="audit-label">Estado Actual</span>
+            <div>
+              @switch (selectedRes()?.estado) {
+                @case (1) { <span class="badge badge-warning">⏳ Pendiente de Aprobación</span> }
+                @case (2) { <span class="badge badge-success">✅ Aprobado</span> }
+                @case (3) { <span class="badge badge-danger">❌ Rechazado</span> }
+                @case (4) { <span class="badge badge-secondary">🏁 Finalizado</span> }
+              }
+            </div>
+          </div>
+
+          <div class="audit-item">
+            <span class="audit-label">Espacio Asignado</span>
+            <span class="audit-value font-bold">{{ selectedRes()?.salon?.title }}</span>
+          </div>
+
+          <div class="audit-item">
+            <span class="audit-label">Fecha y Horario</span>
+            <span class="audit-value">
+              📅 {{ selectedRes()?.fechaEvento || 'No especificada' }}
+              (⏰ {{ selectedRes()?.horaInicio || '08:00' }} - {{ selectedRes()?.horaFin || '12:00' }})
+            </span>
+          </div>
+
+          <div class="audit-item">
+            <span class="audit-label">Docente Responsable</span>
+            <span class="audit-value">
+              {{ selectedRes()?.empleado?.nombres }} {{ selectedRes()?.empleado?.apellidos }}
+            </span>
+          </div>
+
+          <div class="audit-item">
+            <span class="audit-label">Curso / Tema</span>
+            <span class="audit-value">{{ selectedRes()?.curso?.nombre }}</span>
+          </div>
+
+          <div class="audit-item">
+            <span class="audit-label">Participantes</span>
+            <span class="audit-value">{{ selectedRes()?.cantidadPersonas }} alumnos</span>
+          </div>
+
+          <div class="audit-item">
+            <span class="audit-label">Fecha de Solicitud (Registro)</span>
+            <span class="audit-value">{{ selectedRes()?.createdAt | date:'medium' }}</span>
+          </div>
+        </div>
+
+        <!-- Motivo de Rechazo if any -->
+        @if (selectedRes()?.motivoRechazo) {
+          <div class="audit-alert-box alert-danger">
+            <strong>⚠️ Motivo de Rechazo / Cancelación:</strong>
+            <p>{{ selectedRes()?.motivoRechazo }}</p>
+          </div>
+        }
+
+        <!-- Description -->
+        <div class="audit-section">
+          <span class="audit-label">Descripción y Justificación:</span>
+          <p class="audit-text">{{ selectedRes()?.descripcion || 'Sin descripción ingresada.' }}</p>
+        </div>
+
+        <!-- Follow up / Tracking -->
+        @if (selectedRes()?.seguimiento) {
+          <div class="audit-section">
+            <span class="audit-label">Bitácora de Seguimiento:</span>
+            <p class="audit-text">{{ selectedRes()?.seguimiento }}</p>
+          </div>
+        }
+      </div>
+
+      <div class="modal-actions">
+        <button (click)="closeDetailModal()" class="btn btn-outline">Cerrar</button>
+        @if (selectedRes()?.estado === 1) {
+          <button (click)="aprobarDesdeModal()" class="btn btn-gold">✅ Aprobar Esta Solicitud</button>
+        }
+      </div>
+    </app-modal>
+  }
+</div>
