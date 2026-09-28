@@ -4,4 +4,4 @@ export * from './components/empty-state/empty-state.component';
 export * from './components/loading-bar/loading-bar.component';
 export * from './components/toast-container/toast-container.component';
 export * from './components/custom-select/custom-select.component';
-
+export * from './components/confirm-modal/confirm-modal.component';

@@ -82,7 +82,7 @@
           [options]="moduloOptions"
           [ngModel]="selectedModule()"
           (ngModelChange)="selectedModule.set($event); onFilterChange()"
-          [searchable]="false"
+          [searchable]="true"
           placeholder="Seleccionar módulo..."
         ></app-custom-select>
       </div>
@@ -94,7 +94,7 @@
           [options]="accionOptions"
           [ngModel]="selectedAction()"
           (ngModelChange)="selectedAction.set($event); onFilterChange()"
-          [searchable]="false"
+          [searchable]="true"
           placeholder="Seleccionar acción..."
         ></app-custom-select>
       </div>

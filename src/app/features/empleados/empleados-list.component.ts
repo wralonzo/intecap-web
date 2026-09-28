@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { Empleado, TipoEmpleado } from '../../core/models';
 import { PageHeaderComponent, ModalComponent, EmptyStateComponent, CustomSelectComponent, SelectOption } from '../../shared';
 import { computed } from '@angular/core';
@@ -17,6 +18,7 @@ import { computed } from '@angular/core';
 export class EmpleadosListComponent implements OnInit {
   private apiService = inject(ApiService);
   private toast = inject(ToastService);
+  private confirmService = inject(ConfirmService);
 
   activeTab = signal<'empleados' | 'puestos'>('empleados');
   empleados = signal<Empleado[]>([]);
@@ -198,8 +200,15 @@ export class EmpleadosListComponent implements OnInit {
     }
   }
 
-  deleteEmpleado(id: number): void {
-    if (!confirm(`¿Estás seguro de desactivar al empleado #${id}?`)) return;
+  async deleteEmpleado(id: number): Promise<void> {
+    const confirmed = await this.confirmService.confirm({
+      title: '¿Desactivar Colaborador / Docente?',
+      message: `¿Estás seguro de desactivar el registro del colaborador #${id}?`,
+      confirmText: 'Sí, Desactivar',
+      type: 'danger',
+    });
+    if (!confirmed) return;
+
     this.apiService.deleteEmpleado(id).subscribe({
       next: () => {
         this.toast.info('Empleado desactivado', `El colaborador #${id} fue desactivado.`);
@@ -253,8 +262,15 @@ export class EmpleadosListComponent implements OnInit {
     }
   }
 
-  deletePuesto(id: number): void {
-    if (!confirm(`¿Estás seguro de desactivar este puesto del empleado?`)) return;
+  async deletePuesto(id: number): Promise<void> {
+    const confirmed = await this.confirmService.confirm({
+      title: '¿Desactivar Puesto / Cargo?',
+      message: `¿Estás seguro de desactivar este puesto del empleado #${id}?`,
+      confirmText: 'Sí, Desactivar',
+      type: 'danger',
+    });
+    if (!confirmed) return;
+
     this.apiService.deletePuesto(id).subscribe({
       next: () => {
         this.toast.info('Puesto desactivado', `El puesto #${id} fue desactivado.`);

@@ -202,6 +202,8 @@ export interface Reservacion {
   followUp?: string;
   motivoRechazo?: string;
   rejectionReason?: string;
+  reubicacionCursoSalonId?: number;
+  reubicacionCursoSalon?: Salon;
   estado: number;
   status?: number;
   createdAt: string;
@@ -390,11 +392,19 @@ export interface RealtimeSalonStatus {
   dia: string;
   diaId: number;
   turnos: {
-    manana: { curso: string | null; ocupado: boolean };
-    tarde: { curso: string | null; ocupado: boolean };
-    noche: { curso: string | null; ocupado: boolean };
+    manana: { curso: string | null; ocupado: boolean; evento?: string | null };
+    tarde: { curso: string | null; ocupado: boolean; evento?: string | null };
+    noche: { curso: string | null; ocupado: boolean; evento?: string | null };
   };
   disponibilidadActual: string;
+  eventoActivo?: {
+    id: number;
+    tipoEvento: string;
+    horario: string;
+    docente?: string | null;
+    curso?: string | null;
+    participantes?: number;
+  } | null;
 }
 
 export interface RealtimeResponse {

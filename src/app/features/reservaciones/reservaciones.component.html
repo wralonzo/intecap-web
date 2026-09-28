@@ -194,18 +194,24 @@
                   <div class="action-buttons-group">
                     @if (r.estado === 1) {
                       <button
-                        (click)="aprobarReservacion(r)"
+                        (click)="openAprobarModal(r)"
                         class="btn-action-sm btn-approve"
                         title="Aprobar Solicitud"
                       >
+                        <svg class="icon-btn-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                        </svg>
                         Aprobar
                       </button>
                     } @else if (r.estado === 2) {
                       <button
-                        (click)="finalizarReservacion(r)"
+                        (click)="openFinalizarModal(r)"
                         class="btn-action-sm btn-finish"
                         title="Marcar como Finalizado"
                       >
+                        <svg class="icon-btn-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                         Concluir
                       </button>
                     }
@@ -370,21 +376,6 @@
               placeholder="Ej. Material didáctico entregado, confirmación de proyector, etc."
             />
           </div>
-
-          <!-- Estado Inicial -->
-          <div class="form-group full-width">
-            <label>Estado Inicial de la Solicitud</label>
-            <div class="radio-status-group">
-              <label class="radio-label">
-                <input type="radio" [(ngModel)]="formRes.estado" name="estado" [value]="1" />
-                <span>🟡 Enviar como Solicitud Pendiente (Flujo de Aprobación)</span>
-              </label>
-              <label class="radio-label">
-                <input type="radio" [(ngModel)]="formRes.estado" name="estado" [value]="2" />
-                <span>🟢 Registrar como Directamente Aprobada</span>
-              </label>
-            </div>
-          </div>
         </div>
 
         <div class="modal-actions">
@@ -511,6 +502,315 @@
         <button (click)="closeDetailModal()" class="btn btn-outline">Cerrar</button>
         @if (selectedRes()?.estado === 1) {
           <button (click)="aprobarDesdeModal()" class="btn btn-gold">✅ Aprobar Esta Solicitud</button>
+        }
+      </div>
+    </app-modal>
+  }
+
+  <!-- MODAL 4: Confirmación Moderna de Acción (Aprobar / Concluir / Eliminar) -->
+  @if (showConfirmActionModal() && actionTargetRes()) {
+    <app-modal
+      [title]="confirmActionType() === 'approve' ? 'Aprobación y Análisis de Disponibilidad' : (confirmActionType() === 'finish' ? 'Conclusión de Evento' : 'Eliminar Registro')"
+      [maxWidth]="confirmActionType() === 'approve' ? '600px' : '500px'"
+      (close)="closeConfirmActionModal()"
+    >
+      <div class="confirm-modal-wrapper">
+        <!-- Visual Header Hero Icon & Badges -->
+        <div class="confirm-hero" [ngClass]="'hero-' + confirmActionType()">
+          <div class="confirm-hero-icon-bubble">
+            @if (confirmActionType() === 'approve') {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="hero-svg">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            } @else if (confirmActionType() === 'finish') {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="hero-svg">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v1.5M3 21v-6m0 0l2.77-.693a9 9 0 016.208.682l.108.054a9 9 0 006.086.71l3.114-.732a48.524 48.524 0 01-.005-10.499l-3.11.732a9 9 0 01-6.085-.711l-.108-.054a9 9 0 00-6.208-.682L3 4.5M3 15V4.5" />
+              </svg>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="hero-svg">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+              </svg>
+            }
+          </div>
+
+          <h3 class="confirm-heading">
+            @if (confirmActionType() === 'approve') {
+              ¿Aprobar solicitud de reservación #{{ actionTargetRes()?.id }}?
+            } @else if (confirmActionType() === 'finish') {
+              ¿Concluir y finalizar este evento?
+            } @else {
+              ¿Eliminar solicitud de reservación?
+            }
+          </h3>
+          <p class="confirm-subheading">
+            @if (confirmActionType() === 'approve') {
+              El espacio quedará confirmado en el calendario institucional y pantallas informativas.
+            } @else if (confirmActionType() === 'finish') {
+              El evento finalizará y el espacio <strong>volverá automáticamente a su programación regular</strong>.
+            } @else {
+              Esta acción eliminará el registro de reservación permanentemente.
+            }
+          </p>
+        </div>
+
+        <!-- Event Details Mini Card -->
+        <div class="confirm-summary-box">
+          <div class="summary-chip-row">
+            <span class="summary-chip-badge">Solicitud #{{ actionTargetRes()?.id }}</span>
+            <span class="summary-chip-badge highlight">{{ actionTargetRes()?.tipoEvento || 'Taller Especial' }}</span>
+          </div>
+
+          <div class="summary-grid-info">
+            <div class="summary-field">
+              <span class="field-label">Espacio Solicitado</span>
+              <span class="field-value font-bold text-navy">
+                🏛️ {{ actionTargetRes()?.salon?.title || 'Salón #' + actionTargetRes()?.salonId }}
+              </span>
+            </div>
+
+            <div class="summary-field">
+              <span class="field-label">Fecha y Horario</span>
+              <span class="field-value">
+                📅 {{ actionTargetRes()?.fechaEvento || (actionTargetRes()?.createdAt | date:'yyyy-MM-dd') }} &nbsp;•&nbsp; ⏰ {{ actionTargetRes()?.horaInicio }} - {{ actionTargetRes()?.horaFin }}
+              </span>
+            </div>
+
+            <div class="summary-field">
+              <span class="field-label">Docente Responsable</span>
+              <span class="field-value">
+                👨‍🏫 {{ actionTargetRes()?.empleado ? (actionTargetRes()?.empleado?.nombres + ' ' + actionTargetRes()?.empleado?.apellidos) : 'Sin asignar' }}
+              </span>
+            </div>
+
+            <div class="summary-field">
+              <span class="field-label">Curso / Tema</span>
+              <span class="field-value">
+                📚 {{ actionTargetRes()?.curso?.nombre || actionTargetRes()?.tipoEvento }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Smart Availability Analysis Section (Only on Approval) -->
+        @if (confirmActionType() === 'approve') {
+          <div class="availability-section">
+            <div class="section-title-row">
+              <span class="section-title-badge">🔍 Análisis de Disponibilidad Inteligente</span>
+            </div>
+
+            @if (checkingDisponibilidad()) {
+              <div class="availability-loading">
+                <div class="mini-spinner"></div>
+                <span>Analizando cruces de horarios curriculares y espacios alternos...</span>
+              </div>
+            } @else if (disponibilidadData()) {
+              <!-- Case 1: Room has an existing regular course or reservation conflict -->
+              @if (disponibilidadData().conflicto?.tieneConflicto) {
+                <div class="conflict-alert-card">
+                  <div class="conflict-header">
+                    <span class="conflict-icon">⚠️</span>
+                    <div class="conflict-titles">
+                      <div class="conflict-title font-bold">Coincidencia de Horario Detectada</div>
+                      <div class="conflict-subtitle">{{ disponibilidadData().conflicto.descripcion }}</div>
+                    </div>
+                  </div>
+
+                  <div class="conflict-detail-box">
+                    @if (disponibilidadData().conflicto.jornadasAfectadas && disponibilidadData().conflicto.jornadasAfectadas.length > 0) {
+                      <div class="jornadas-afectadas-list">
+                        @for (j of disponibilidadData().conflicto.jornadasAfectadas; track $index) {
+                          <div class="jornada-item-row">
+                            <span class="jornada-badge">{{ j.turno }} ({{ j.horario }}):</span>
+                            <span class="jornada-curso-name font-semibold">{{ j.curso }}</span>
+                          </div>
+                        }
+                      </div>
+                    } @else {
+                      <div class="detail-row">
+                        <span class="detail-key">Actividad:</span>
+                        <span class="detail-val font-semibold">{{ disponibilidadData().conflicto.titulo }}</span>
+                      </div>
+                      @if (disponibilidadData().conflicto.docente) {
+                        <div class="detail-row">
+                          <span class="detail-key">Docente:</span>
+                          <span class="detail-val">{{ disponibilidadData().conflicto.docente }}</span>
+                        </div>
+                      }
+                      @if (disponibilidadData().conflicto.horario) {
+                        <div class="detail-row">
+                          <span class="detail-key">Horario Base:</span>
+                          <span class="detail-val">{{ disponibilidadData().conflicto.horario }}</span>
+                        </div>
+                      }
+                    }
+                  </div>
+
+                  <!-- Automated Options Selector -->
+                  <div class="options-selector">
+                    <div class="option-header-label">Selecciona la estrategia de resolución de horario:</div>
+
+                    <!-- Strategy 1: Overlay (Default) -->
+                    <div
+                      class="smart-option-card"
+                      [class.selected]="modoEstrategia() === 'overlay'"
+                      (click)="setEstrategia('overlay')"
+                    >
+                      <div class="radio-indicator">
+                        <span class="radio-dot" [class.active]="modoEstrategia() === 'overlay'"></span>
+                      </div>
+                      <div class="option-content">
+                        <div class="option-title-line">
+                          <span class="font-bold text-navy">⚡ Superposición Temporal de 1 Día (Recomendado)</span>
+                          <span class="badge-tag-auto">Auto-restaurable</span>
+                        </div>
+                        <p class="option-desc">
+                          El evento especial ocupará el salón <strong>{{ actionTargetRes()?.salon?.title }}</strong> solo durante esta fecha y horario. <strong>Al presionar 'Concluir Evento'</strong>, el curso regular volverá automáticamente a su estado original sin alterar la programación fija.
+                        </p>
+                      </div>
+                    </div>
+
+                    <!-- Strategy 2: Reubicar el EVENTO a un salón alterno -->
+                    @if (disponibilidadData().alternativas && disponibilidadData().alternativas.length > 0) {
+                      <div
+                        class="smart-option-card"
+                        [class.selected]="modoEstrategia() === 'reubicar_evento'"
+                        (click)="setEstrategia('reubicar_evento')"
+                      >
+                        <div class="radio-indicator">
+                          <span class="radio-dot" [class.active]="modoEstrategia() === 'reubicar_evento'"></span>
+                        </div>
+                        <div class="option-content">
+                          <div class="option-title-line">
+                            <span class="font-bold text-navy">🔄 Reubicar este Evento a otro Salón / Taller</span>
+                            <span class="badge-tag-reubicar">Mover Evento</span>
+                          </div>
+                          <p class="option-desc">
+                            El evento especial se trasladará al salón alternativo seleccionado. El curso regular continuará en su salón original <strong>{{ actionTargetRes()?.salon?.title }}</strong> sin interferencias.
+                          </p>
+                        </div>
+                      </div>
+
+                      <!-- Strategy 3: Reubicar el CURSO REGULAR a un salón alterno -->
+                      <div
+                        class="smart-option-card"
+                        [class.selected]="modoEstrategia() === 'reubicar_curso'"
+                        (click)="setEstrategia('reubicar_curso')"
+                      >
+                        <div class="radio-indicator">
+                          <span class="radio-dot" [class.active]="modoEstrategia() === 'reubicar_curso'"></span>
+                        </div>
+                        <div class="option-content">
+                          <div class="option-title-line">
+                            <span class="font-bold text-navy">🏫 Reubicar el Curso Regular a un Salón / Taller Alterno</span>
+                            <span class="badge-tag-mover-curso">Mover Curso</span>
+                          </div>
+                          <p class="option-desc">
+                            El evento especial se realizará en <strong>{{ actionTargetRes()?.salon?.title }}</strong> y el/los cursos regulares en conflicto se trasladarán temporalmente (solo por este día) al espacio alternativo que elijas. Al concluir el evento, el curso regresa a su salón base.
+                          </p>
+                        </div>
+                      </div>
+
+                      <!-- Alternative Rooms List for Strategy 2 & 3 -->
+                      @if (modoEstrategia() === 'reubicar_evento' || modoEstrategia() === 'reubicar_curso') {
+                        <div class="alternative-spaces-box animate-fadeIn">
+                          <div class="alt-header-label">
+                            @if (modoEstrategia() === 'reubicar_evento') {
+                              <span>📍 Selecciona el espacio destino donde se llevará a cabo el <strong>Evento</strong>:</span>
+                            } @else {
+                              <span>📍 Selecciona el espacio alterno donde se impartirá el <strong>Curso Regular</strong>:</span>
+                            }
+                          </div>
+
+                          <div class="alt-rooms-list">
+                            @for (alt of disponibilidadData().alternativas; track alt.id) {
+                              <div
+                                class="alt-room-card"
+                                [class.selected]="selectedAlternativeSalonId() === alt.id"
+                                (click)="seleccionarAlternativa(alt.id)"
+                              >
+                                <div class="alt-room-info">
+                                  <div class="alt-room-name font-bold">
+                                    🏛️ {{ alt.title }}
+                                  </div>
+                                  <div class="alt-room-sub">
+                                    {{ alt.tipoSalonLabel }} • Capacidad: {{ alt.cantidadPersonas }} pers. • <span class="alt-detail-txt">{{ alt.detalleInfo }}</span>
+                                  </div>
+                                </div>
+                                <div class="alt-room-badge">
+                                  @if (selectedAlternativeSalonId() === alt.id) {
+                                    <span class="selected-check">
+                                      ✓ {{ modoEstrategia() === 'reubicar_evento' ? 'Reubicar Evento Aquí' : 'Reubicar Curso Aquí' }}
+                                    </span>
+                                  } @else {
+                                    <span class="free-badge" [ngClass]="'badge-' + alt.estadoTipo">{{ alt.estadoLabel }}</span>
+                                  }
+                                </div>
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      }
+                    }
+                  </div>
+                </div>
+              } @else {
+                <!-- Case 2: Room is 100% Free without conflicts -->
+                <div class="free-alert-card">
+                  <div class="free-icon">✅</div>
+                  <div class="free-info">
+                    <div class="free-title font-bold">Espacio 100% Disponible</div>
+                    <div class="free-subtitle">
+                      No se detectaron cursos regulares ni reservaciones simultáneas para esta fecha y horario.
+                    </div>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+
+      <div class="modal-actions confirm-modal-actions">
+        <button type="button" (click)="closeConfirmActionModal()" class="btn btn-outline" [disabled]="actionInProgress()">
+          Cancelar
+        </button>
+
+        @if (confirmActionType() === 'approve') {
+          <button type="button" (click)="executeConfirmedAction()" [disabled]="actionInProgress() || checkingDisponibilidad() || (modoEstrategia() !== 'overlay' && !selectedAlternativeSalonId())" class="btn btn-success-modern">
+            @if (actionInProgress()) {
+              <span class="btn-spinner"></span> Aprobando...
+            } @else {
+              <svg class="icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+              </svg>
+              @if (modoEstrategia() === 'reubicar_evento' && selectedAlternativeSalonId()) {
+                Aprobar y Reubicar Evento en {{ getSelectedAlternativeSalon()?.title }}
+              } @else if (modoEstrategia() === 'reubicar_curso' && selectedAlternativeSalonId()) {
+                Aprobar Evento y Mover Curso a {{ getSelectedAlternativeSalon()?.title }}
+              } @else {
+                Confirmar y Aprobar Solicitud
+              }
+            }
+          </button>
+        } @else if (confirmActionType() === 'finish') {
+          <button type="button" (click)="executeConfirmedAction()" [disabled]="actionInProgress()" class="btn btn-navy-modern">
+            @if (actionInProgress()) {
+              <span class="btn-spinner"></span> Finalizando...
+            } @else {
+              <svg class="icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Concluir y Restaurar Horario
+            }
+          </button>
+        } @else {
+          <button type="button" (click)="executeConfirmedAction()" [disabled]="actionInProgress()" class="btn btn-danger">
+            @if (actionInProgress()) {
+              <span class="btn-spinner"></span> Eliminando...
+            } @else {
+              🗑️ Sí, Eliminar
+            }
+          </button>
         }
       </div>
     </app-modal>

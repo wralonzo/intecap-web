@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { User, Empleado } from '../../core/models';
 import { PageHeaderComponent, ModalComponent, EmptyStateComponent, CustomSelectComponent, SelectOption } from '../../shared';
 
@@ -16,6 +17,7 @@ import { PageHeaderComponent, ModalComponent, EmptyStateComponent, CustomSelectC
 export class UsersListComponent implements OnInit {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private confirmService = inject(ConfirmService);
 
   users = signal<User[]>([]);
   empleados = signal<Empleado[]>([]);
@@ -179,8 +181,15 @@ export class UsersListComponent implements OnInit {
     }
   }
 
-  deleteUser(id: number): void {
-    if (!confirm(`¿Estás seguro de desactivar la cuenta de usuario #${id}?`)) return;
+  async deleteUser(id: number): Promise<void> {
+    const confirmed = await this.confirmService.confirm({
+      title: '¿Desactivar Cuenta de Usuario?',
+      message: `¿Estás seguro de desactivar la cuenta de acceso del usuario #${id}? El usuario no podrá iniciar sesión.`,
+      confirmText: 'Sí, Desactivar',
+      type: 'danger',
+    });
+    if (!confirmed) return;
+
     this.api.deleteUser(id).subscribe({
       next: () => {
         this.toast.info('Usuario desactivado', `La cuenta #${id} ha sido desactivada.`);

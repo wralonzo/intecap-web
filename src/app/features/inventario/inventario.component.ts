@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { Mobiliario, Suministro } from '../../core/models';
 import { PageHeaderComponent, ModalComponent, EmptyStateComponent } from '../../shared';
 import { exportToCsv, printHtmlReport } from '../../core/utils/export.util';
@@ -17,6 +18,7 @@ import { exportToCsv, printHtmlReport } from '../../core/utils/export.util';
 export class InventarioComponent implements OnInit {
   private apiService = inject(ApiService);
   private toast = inject(ToastService);
+  private confirmService = inject(ConfirmService);
 
   mobiliario = signal<Mobiliario[]>([]);
   items = signal<Suministro[]>([]);
@@ -161,28 +163,40 @@ export class InventarioComponent implements OnInit {
     }
   }
 
-  deleteMobiliario(mob: Mobiliario): void {
-    if (confirm(`¿Está seguro de eliminar el mobiliario "${mob.nombre}"?`)) {
-      this.apiService.deleteMobiliario(mob.id).subscribe({
-        next: () => {
-          this.toast.success(`Mobiliario "${mob.nombre}" eliminado.`);
-          this.loadAll();
-        },
-        error: () => this.toast.error('Error al eliminar mobiliario.'),
-      });
-    }
+  async deleteMobiliario(mob: Mobiliario): Promise<void> {
+    const confirmed = await this.confirmService.confirm({
+      title: '¿Eliminar Mobiliario / Equipo?',
+      message: `¿Está seguro de eliminar el registro de mobiliario "${mob.nombre}"?`,
+      confirmText: 'Sí, Eliminar',
+      type: 'danger',
+    });
+    if (!confirmed) return;
+
+    this.apiService.deleteMobiliario(mob.id).subscribe({
+      next: () => {
+        this.toast.success(`Mobiliario "${mob.nombre}" eliminado.`);
+        this.loadAll();
+      },
+      error: () => this.toast.error('Error al eliminar mobiliario.'),
+    });
   }
 
-  deleteItem(item: Suministro): void {
-    if (confirm(`¿Está seguro de eliminar el artículo "${item.nombre}"?`)) {
-      this.apiService.deleteItem(item.id).subscribe({
-        next: () => {
-          this.toast.success(`Suministro "${item.nombre}" eliminado.`);
-          this.loadAll();
-        },
-        error: () => this.toast.error('Error al eliminar suministro.'),
-      });
-    }
+  async deleteItem(item: Suministro): Promise<void> {
+    const confirmed = await this.confirmService.confirm({
+      title: '¿Eliminar Suministro / Artículo?',
+      message: `¿Está seguro de eliminar el suministro "${item.nombre}"?`,
+      confirmText: 'Sí, Eliminar',
+      type: 'danger',
+    });
+    if (!confirmed) return;
+
+    this.apiService.deleteItem(item.id).subscribe({
+      next: () => {
+        this.toast.success(`Suministro "${item.nombre}" eliminado.`);
+        this.loadAll();
+      },
+      error: () => this.toast.error('Error al eliminar suministro.'),
+    });
   }
 
   // Exportar Inventario Completo a Excel

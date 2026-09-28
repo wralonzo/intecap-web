@@ -64,8 +64,14 @@
   </div>
 
   @if (isOpen()) {
-    <div class="dropdown-menu animate-fade-in" role="listbox">
-      @if (searchable && options.length > 4) {
+    <div
+      class="dropdown-menu"
+      [class.open-upwards]="openUpwards()"
+      [class.animate-fade-in]="!openUpwards()"
+      [class.animate-fade-in-up]="openUpwards()"
+      role="listbox"
+    >
+      @if (searchable && options.length > 1) {
         <div class="search-wrapper" (click)="$event.stopPropagation()">
           <svg class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -77,7 +83,6 @@
             [placeholder]="searchPlaceholder"
             [ngModel]="searchTerm()"
             (ngModelChange)="searchTerm.set($event)"
-            autofocus
           />
         </div>
       }

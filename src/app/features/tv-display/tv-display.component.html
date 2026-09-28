@@ -163,19 +163,43 @@
             <div class="card-main-info">
               @if (isOcupado(s)) {
                 <div class="active-course-box">
-                  <span class="course-label">CURSO O ESPECIALIDAD EN IMPARTICIÓN:</span>
-                  <h3 class="course-title">{{ getCursoActual(s) || 'Capacitación Técnica INTECAP' }}</h3>
-                  
-                  <div class="course-details">
-                    <div class="detail-item">
-                      <span class="detail-icon">👥</span>
-                      <span class="detail-val font-semibold">Capacidad: {{ s.cantidadPersonas }} estudiantes</span>
+                  @if (s.eventoActivo) {
+                    <span class="course-label">🎯 EVENTO EN CURSO / RESERVACIÓN:</span>
+                    <h3 class="course-title">{{ s.eventoActivo.tipoEvento }}</h3>
+                    
+                    <div class="course-details">
+                      <div class="detail-item">
+                        <span class="detail-icon">⏰</span>
+                        <span class="detail-val font-semibold">Horario: {{ s.eventoActivo.horario }}</span>
+                      </div>
+                      @if (s.eventoActivo.docente) {
+                        <div class="detail-item">
+                          <span class="detail-icon">👨‍🏫</span>
+                          <span class="detail-val">Docente: {{ s.eventoActivo.docente }}</span>
+                        </div>
+                      }
+                      @if (s.eventoActivo.curso) {
+                        <div class="detail-item">
+                          <span class="detail-icon">📚</span>
+                          <span class="detail-val">Tema: {{ s.eventoActivo.curso }}</span>
+                        </div>
+                      }
                     </div>
-                    <div class="detail-item">
-                      <span class="detail-icon">⏰</span>
-                      <span class="detail-val">{{ currentTurnoHorario() }}</span>
+                  } @else {
+                    <span class="course-label">CURSO O ESPECIALIDAD EN IMPARTICIÓN:</span>
+                    <h3 class="course-title">{{ getCursoActual(s) || 'Capacitación Técnica INTECAP' }}</h3>
+                    
+                    <div class="course-details">
+                      <div class="detail-item">
+                        <span class="detail-icon">👥</span>
+                        <span class="detail-val font-semibold">Capacidad: {{ s.cantidadPersonas }} estudiantes</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="detail-icon">⏰</span>
+                        <span class="detail-val">{{ currentTurnoHorario() }}</span>
+                      </div>
                     </div>
-                  </div>
+                  }
                 </div>
               } @else {
                 <div class="free-space-box">
@@ -190,15 +214,15 @@
 
             <!-- Daily Schedule Mini-Timeline -->
             <div class="card-footer-schedule">
-              <div class="shift-slot" [class.active-slot]="isShiftNow('manana')" [class.has-class]="s.turnos.manana.ocupado">
+              <div class="shift-slot" [class.active-slot]="isShiftNow('manana')" [class.has-class]="s.turnos.manana.ocupado" [title]="'Mañana: ' + (s.turnos.manana.curso || 'Libre')">
                 <span class="slot-name">Mañana</span>
                 <span class="slot-course">{{ s.turnos.manana.curso || 'Libre' }}</span>
               </div>
-              <div class="shift-slot" [class.active-slot]="isShiftNow('tarde')" [class.has-class]="s.turnos.tarde.ocupado">
+              <div class="shift-slot" [class.active-slot]="isShiftNow('tarde')" [class.has-class]="s.turnos.tarde.ocupado" [title]="'Tarde: ' + (s.turnos.tarde.curso || 'Libre')">
                 <span class="slot-name">Tarde</span>
                 <span class="slot-course">{{ s.turnos.tarde.curso || 'Libre' }}</span>
               </div>
-              <div class="shift-slot" [class.active-slot]="isShiftNow('noche')" [class.has-class]="s.turnos.noche.ocupado">
+              <div class="shift-slot" [class.active-slot]="isShiftNow('noche')" [class.has-class]="s.turnos.noche.ocupado" [title]="'Noche: ' + (s.turnos.noche.curso || 'Libre')">
                 <span class="slot-name">Noche</span>
                 <span class="slot-course">{{ s.turnos.noche.curso || 'Libre' }}</span>
               </div>

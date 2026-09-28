@@ -90,6 +90,17 @@ export class ReservacionesComponent implements OnInit {
   showCreateModal = signal<boolean>(false);
   showDetailModal = signal<boolean>(false);
   showRechazoModal = signal<boolean>(false);
+  showConfirmActionModal = signal<boolean>(false);
+  confirmActionType = signal<'approve' | 'finish' | 'delete'>('approve');
+  actionTargetRes = signal<Reservacion | null>(null);
+  actionInProgress = signal<boolean>(false);
+  
+  // Smart Availability Signals
+  checkingDisponibilidad = signal<boolean>(false);
+  disponibilidadData = signal<any>(null);
+  selectedAlternativeSalonId = signal<number | null>(null);
+  modoEstrategia = signal<'overlay' | 'reubicar_evento' | 'reubicar_curso'>('overlay');
+
   selectedRes = signal<Reservacion | null>(null);
   motivoRechazoText = '';
 
@@ -198,37 +209,150 @@ export class ReservacionesComponent implements OnInit {
     this.loadReservaciones();
   }
 
-  // --- Actions ---
-  aprobarReservacion(r: Reservacion) {
-    if (confirm(`¿Aprobar la solicitud #${r.id} para el espacio "${r.salon?.title}"?`)) {
-      this.api.cambiarEstadoReservacion(r.id, 2).subscribe({
+  // --- Actions & Modern Modals ---
+  openAprobarModal(r: Reservacion) {
+    this.actionTargetRes.set(r);
+    this.confirmActionType.set('approve');
+    this.selectedAlternativeSalonId.set(null);
+    this.modoEstrategia.set('overlay');
+    this.disponibilidadData.set(null);
+    this.showConfirmActionModal.set(true);
+    this.checkAvailability(r.id);
+  }
+
+  checkAvailability(reservacionId: number) {
+    this.checkingDisponibilidad.set(true);
+    this.api.verificarDisponibilidadReservacion(reservacionId).subscribe({
+      next: (data) => {
+        this.disponibilidadData.set(data);
+        this.checkingDisponibilidad.set(false);
+      },
+      error: (err) => {
+        console.error('Error verificando disponibilidad:', err);
+        this.checkingDisponibilidad.set(false);
+      },
+    });
+  }
+
+  setEstrategia(modo: 'overlay' | 'reubicar_evento' | 'reubicar_curso') {
+    this.modoEstrategia.set(modo);
+    if (modo === 'overlay') {
+      this.selectedAlternativeSalonId.set(null);
+    } else if (!this.selectedAlternativeSalonId() && this.disponibilidadData()?.alternativas?.length > 0) {
+      // Auto-select first available room if none selected
+      this.selectedAlternativeSalonId.set(this.disponibilidadData().alternativas[0].id);
+    }
+  }
+
+  seleccionarAlternativa(salonId: number) {
+    this.selectedAlternativeSalonId.set(salonId);
+  }
+
+  getSelectedAlternativeSalon(): any {
+    const id = this.selectedAlternativeSalonId();
+    if (!id || !this.disponibilidadData()?.alternativas) return null;
+    return this.disponibilidadData().alternativas.find((a: any) => a.id === id);
+  }
+
+  openFinalizarModal(r: Reservacion) {
+    this.actionTargetRes.set(r);
+    this.confirmActionType.set('finish');
+    this.showConfirmActionModal.set(true);
+  }
+
+  openDeleteModal(r: Reservacion) {
+    this.actionTargetRes.set(r);
+    this.confirmActionType.set('delete');
+    this.showConfirmActionModal.set(true);
+  }
+
+  closeConfirmActionModal() {
+    this.showConfirmActionModal.set(false);
+    this.actionTargetRes.set(null);
+    this.actionInProgress.set(false);
+    this.disponibilidadData.set(null);
+    this.selectedAlternativeSalonId.set(null);
+    this.modoEstrategia.set('overlay');
+  }
+
+  executeConfirmedAction() {
+    const r = this.actionTargetRes();
+    if (!r) return;
+
+    this.actionInProgress.set(true);
+    const action = this.confirmActionType();
+
+    if (action === 'approve') {
+      const estrategia = this.modoEstrategia();
+      const altSalon = this.getSelectedAlternativeSalon();
+      const nuevoSalonId = estrategia === 'reubicar_evento' ? (this.selectedAlternativeSalonId() || undefined) : undefined;
+      const reubicacionCursoSalonId = estrategia === 'reubicar_curso' ? (this.selectedAlternativeSalonId() || undefined) : undefined;
+
+      this.api.cambiarEstadoReservacion(r.id, 2, undefined, nuevoSalonId, reubicacionCursoSalonId).subscribe({
         next: () => {
-          this.toast.success('Solicitud aprobada', `La reservación #${r.id} ha sido confirmada.`);
+          this.actionInProgress.set(false);
+          this.closeConfirmActionModal();
+
+          if (estrategia === 'reubicar_evento' && altSalon) {
+            this.toast.success(
+              'Evento reubicado y aprobado',
+              `La reservación #${r.id} fue confirmada en "${altSalon.title}". Los cursos del salón original no fueron alterados.`
+            );
+          } else if (estrategia === 'reubicar_curso' && altSalon) {
+            this.toast.success(
+              'Evento aprobado y curso reubicado',
+              `El evento se realizará en "${r.salon?.title || 'el salón original'}" y el curso regular se trasladó temporalmente a "${altSalon.title}".`
+            );
+          } else {
+            this.toast.success(
+              'Solicitud aprobada con éxito',
+              `La reservación #${r.id} fue confirmada con superposición temporal automática de 1 día.`
+            );
+          }
           this.loadStats();
           this.loadReservaciones(false);
         },
-        error: (err) => this.toast.error('Error', err.error?.message || err.message || 'Error al aprobar solicitud'),
+        error: (err) => {
+          this.actionInProgress.set(false);
+          this.toast.error('Error', err.error?.message || err.message || 'Error al aprobar solicitud');
+        },
+      });
+    } else if (action === 'finish') {
+      this.api.cambiarEstadoReservacion(r.id, 4).subscribe({
+        next: () => {
+          this.actionInProgress.set(false);
+          this.closeConfirmActionModal();
+          this.toast.info('Evento concluido', `El evento #${r.id} fue finalizado y la programación regular fue restaurada automáticamente.`);
+          this.loadStats();
+          this.loadReservaciones(false);
+        },
+        error: (err) => {
+          this.actionInProgress.set(false);
+          this.toast.error('Error', err.error?.message || err.message || 'Error al finalizar evento');
+        },
+      });
+    } else if (action === 'delete') {
+      this.api.deleteReservacion(r.id).subscribe({
+        next: () => {
+          this.actionInProgress.set(false);
+          this.closeConfirmActionModal();
+          this.toast.info('Reservación eliminada', `El registro #${r.id} ha sido eliminado.`);
+          this.loadStats();
+          this.loadReservaciones(false);
+        },
+        error: (err) => {
+          this.actionInProgress.set(false);
+          this.toast.error('Error', err.error?.message || err.message || 'Error al eliminar reservación');
+        },
       });
     }
   }
 
   aprobarDesdeModal() {
-    if (this.selectedRes()) {
-      this.aprobarReservacion(this.selectedRes()!);
+    const r = this.selectedRes();
+    if (r) {
       this.closeDetailModal();
-    }
-  }
-
-  finalizarReservacion(r: Reservacion) {
-    if (confirm(`¿Marcar como Concluido/Finalizado el evento #${r.id}?`)) {
-      this.api.cambiarEstadoReservacion(r.id, 4).subscribe({
-        next: () => {
-          this.toast.info('Evento concluido', `El evento #${r.id} fue finalizado.`);
-          this.loadStats();
-          this.loadReservaciones(false);
-        },
-        error: (err) => this.toast.error('Error', err.error?.message || err.message || 'Error al finalizar evento'),
-      });
+      this.openAprobarModal(r);
     }
   }
 
@@ -257,18 +381,6 @@ export class ReservacionesComponent implements OnInit {
     });
   }
 
-  deleteReservacion(r: Reservacion) {
-    if (confirm(`¿Estás seguro de eliminar el registro de reservación #${r.id}?`)) {
-      this.api.deleteReservacion(r.id).subscribe({
-        next: () => {
-          this.toast.info('Reservación eliminada', `El registro #${r.id} ha sido eliminado.`);
-          this.loadStats();
-          this.loadReservaciones(false);
-        },
-        error: (err) => this.toast.error('Error', err.error?.message || err.message || 'Error al eliminar reservación'),
-      });
-    }
-  }
 
   // --- Modals ---
   openCreateModal() {

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { WebSocketService } from '../../core/services/websocket.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { exportToCsv, printHtmlReport } from '../../core/utils/export.util';
 import {
   Salon,
@@ -27,6 +28,7 @@ export class SalonesListComponent implements OnInit {
   private readonly ws = inject(WebSocketService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly toast = inject(ToastService);
+  private readonly confirmService = inject(ConfirmService);
 
   activeView = signal<'realtime' | 'matriz' | 'catalogo' | 'jornadas'>('realtime');
   loading = signal(true);
@@ -322,8 +324,15 @@ export class SalonesListComponent implements OnInit {
     }
   }
 
-  deleteSalon(id: number) {
-    if (!confirm(`¿Estás seguro de eliminar el espacio #${id}?`)) return;
+  async deleteSalon(id: number): Promise<void> {
+    const confirmed = await this.confirmService.confirm({
+      title: '¿Eliminar Espacio / Salón?',
+      message: `¿Estás seguro de desactivar el espacio o salón #${id}? Se ocultará del catálogo general.`,
+      confirmText: 'Sí, Desactivar',
+      type: 'danger',
+    });
+    if (!confirmed) return;
+
     this.api.deleteSalon(id).subscribe({
       next: () => {
         this.toast.info('Espacio eliminado', `El salón #${id} ha sido desactivado.`);

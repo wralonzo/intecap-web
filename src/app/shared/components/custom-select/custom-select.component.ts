@@ -7,6 +7,7 @@ import {
   signal,
   computed,
   ElementRef,
+  ViewChild,
   HostListener,
   ChangeDetectionStrategy,
 } from '@angular/core';
@@ -48,10 +49,14 @@ export class CustomSelectComponent implements ControlValueAccessor {
   @Input() searchable = true;
   @Input() searchPlaceholder = 'Buscar...';
   @Input() size: 'sm' | 'md' | 'lg' = 'md';
+  @Input() placement: 'auto' | 'bottom' | 'top' = 'auto';
 
   @Output() selectionChange = new EventEmitter<any>();
 
+  @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
+
   isOpen = signal<boolean>(false);
+  openUpwards = signal<boolean>(false);
   selectedValue = signal<any>(null);
   searchTerm = signal<string>('');
   highlightedIndex = signal<number>(-1);
@@ -102,13 +107,33 @@ export class CustomSelectComponent implements ControlValueAccessor {
     if (event) event.stopPropagation();
 
     const nextState = !this.isOpen();
-    this.isOpen.set(nextState);
     if (nextState) {
+      if (this.placement === 'top') {
+        this.openUpwards.set(true);
+      } else if (this.placement === 'bottom') {
+        this.openUpwards.set(false);
+      } else {
+        // Auto-detect available space
+        const rect = this.elementRef.nativeElement.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        if (spaceBelow < 260 && spaceAbove > 180) {
+          this.openUpwards.set(true);
+        } else {
+          this.openUpwards.set(false);
+        }
+      }
       this.searchTerm.set('');
       this.highlightedIndex.set(-1);
+      setTimeout(() => {
+        if (this.searchInput?.nativeElement) {
+          this.searchInput.nativeElement.focus();
+        }
+      }, 50);
     } else {
       this.onTouched();
     }
+    this.isOpen.set(nextState);
   }
 
   selectOption(opt: SelectOption, event?: MouseEvent): void {

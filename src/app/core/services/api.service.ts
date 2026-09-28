@@ -236,9 +236,13 @@ export class ApiService {
       .pipe(map(normalizeReservacion));
   }
 
-  cambiarEstadoReservacion(id: number, estado: number, motivoRechazo?: string): Observable<Reservacion> {
+  verificarDisponibilidadReservacion(id: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/reservaciones/${id}/disponibilidad`);
+  }
+
+  cambiarEstadoReservacion(id: number, estado: number, motivoRechazo?: string, nuevoSalonId?: number, reubicacionCursoSalonId?: number): Observable<Reservacion> {
     return this.http
-      .patch<Reservacion>(`${this.baseUrl}/reservaciones/${id}/estado`, { estado, motivoRechazo })
+      .patch<Reservacion>(`${this.baseUrl}/reservaciones/${id}/estado`, { estado, motivoRechazo, nuevoSalonId, reubicacionCursoSalonId })
       .pipe(map(normalizeReservacion));
   }
 

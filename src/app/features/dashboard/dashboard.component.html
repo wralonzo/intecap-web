@@ -67,17 +67,58 @@
       <div class="kpi-info">
         <div class="kpi-label">Reservaciones</div>
         <div class="kpi-value">{{ totalReservaciones() }}</div>
-        <div class="kpi-subtext">Eventos registrados</div>
+        <div class="kpi-subtext">
+          @if (reservacionesStats()) {
+            {{ reservacionesStats()?.aprobadas || 0 }} aprobadas • {{ reservacionesStats()?.pendientes || 0 }} pendientes
+          } @else {
+            Eventos registrados
+          }
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- Eventos y Reservaciones de Hoy (Si existen) -->
+  @if (eventosHoy().length > 0) {
+    <div class="card today-events-card">
+      <div class="today-header">
+        <div class="today-title-group">
+          <span class="live-pulse"></span>
+          <h3>📅 Eventos y Reservaciones Programados para Hoy ({{ todayStr() }})</h3>
+        </div>
+        <span class="badge badge-success">{{ eventosHoy().length }} Evento(s) en Curso / Programado(s)</span>
+      </div>
+      <div class="today-events-grid">
+        @for (ev of eventosHoy(); track ev.id) {
+          <div class="event-item-card">
+            <div class="event-time-badge">
+              ⏰ {{ ev.startTime || ev.horaInicio || '08:00' }} - {{ ev.endTime || ev.horaFin || '12:00' }}
+            </div>
+            <div class="event-details">
+              <h4 class="event-name">{{ ev.eventType || ev.tipoEvento || 'Evento Especial' }}</h4>
+              <p class="event-room">🏛️ <strong>{{ ev.salon?.title || ev.room?.title || 'Salón #' + (ev.salonId || ev.roomId) }}</strong></p>
+              @if (ev.curso?.nombre || ev.curso?.name) {
+                <p class="event-course">📚 {{ ev.curso?.nombre || ev.curso?.name }}</p>
+              }
+              <p class="event-teacher">
+                👨‍🏫 {{ ev.empleado ? (ev.empleado.nombres || ev.empleado.firstName) + ' ' + (ev.empleado.apellidos || ev.empleado.lastName) : 'Docente Asignado' }}
+              </p>
+            </div>
+            <div class="event-status">
+              <span class="badge badge-success">✅ Aprobada</span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
 
   <!-- Quick Action Panels Grid -->
   <div class="dashboard-grid">
     <!-- Recent Reservations -->
     <div class="card panel-card">
       <div class="panel-header">
-        <h3>Reservaciones Recientes</h3>
+        <h3>Reservaciones y Eventos Recientes</h3>
         <a routerLink="/reservaciones" class="view-all">Ver todas →</a>
       </div>
 
@@ -85,7 +126,7 @@
         <app-empty-state
           icon="📅"
           title="No hay reservaciones recientes"
-          message="No se encontraron eventos activos en el sistema.">
+          message="No se encontraron eventos registrados en el sistema.">
           <a routerLink="/reservaciones" class="btn btn-primary btn-sm">Crear primera reservación</a>
         </app-empty-state>
       } @else {
@@ -93,22 +134,38 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>Salón / Taller</th>
-                <th>Docente</th>
-                <th>Curso</th>
-                <th>Jornada</th>
+                <th>Espacio / Salón</th>
+                <th>Evento & Horario</th>
+                <th>Docente Responsable</th>
+                <th>Curso / Tema</th>
                 <th>Estado</th>
               </tr>
             </thead>
             <tbody>
               @for (r of recentReservaciones(); track r.id) {
                 <tr>
-                  <td class="font-medium text-navy">{{ r.salon?.title || r.room?.title || 'Salón #' + (r.salonId || r.roomId) }}</td>
+                  <td class="font-medium text-navy">
+                    <div class="room-title-text">{{ r.salon?.title || r.room?.title || 'Salón #' + (r.salonId || r.roomId) }}</div>
+                    <small class="text-muted">{{ r.jornada || r.shiftName || 'General' }}</small>
+                  </td>
+                  <td>
+                    <div class="event-type-badge">{{ r.eventType || r.tipoEvento || 'Evento Extraordinario' }}</div>
+                    <div class="event-date-text">📅 {{ r.eventDate || r.fechaEvento }} (⏰ {{ r.startTime || r.horaInicio }} - {{ r.endTime || r.horaFin }})</div>
+                  </td>
                   <td>{{ r.empleado ? (r.empleado.nombres || r.empleado.firstName) + ' ' + (r.empleado.apellidos || r.empleado.lastName) : '-' }}</td>
                   <td>{{ r.curso?.nombre || r.curso?.name || '-' }}</td>
-                  <td>{{ r.jornada || r.shiftName || 'General' }}</td>
                   <td>
-                    <span class="badge badge-success">Confirmada</span>
+                    @if (r.status === 2 || r.estado === 2) {
+                      <span class="badge badge-success">✅ Aprobada</span>
+                    } @else if (r.status === 1 || r.estado === 1) {
+                      <span class="badge badge-warning">⏳ Pendiente</span>
+                    } @else if (r.status === 3 || r.estado === 3) {
+                      <span class="badge badge-danger">❌ Rechazada</span>
+                    } @else if (r.status === 4 || r.estado === 4) {
+                      <span class="badge badge-secondary">🏁 Finalizada</span>
+                    } @else {
+                      <span class="badge badge-info">Registrada</span>
+                    }
                   </td>
                 </tr>
               }

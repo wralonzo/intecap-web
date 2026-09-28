@@ -168,22 +168,43 @@
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
-  box-shadow: 0 10px 25px -5px rgba(0, 26, 61, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 12px 28px -4px rgba(0, 26, 61, 0.18), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
   z-index: 1050;
   overflow: hidden;
-  max-height: 280px;
+  max-height: 260px;
   display: flex;
   flex-direction: column;
+
+  &.open-upwards {
+    top: auto;
+    bottom: calc(100% + 4px);
+    box-shadow: 0 -12px 28px -4px rgba(0, 26, 61, 0.18), 0 -8px 10px -6px rgba(0, 0, 0, 0.05);
+  }
 }
 
 .animate-fade-in {
-  animation: dropdownIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: dropdownIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in-up {
+  animation: dropdownInUp 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes dropdownIn {
   from {
     opacity: 0;
     transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dropdownInUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
   }
   to {
     opacity: 1;

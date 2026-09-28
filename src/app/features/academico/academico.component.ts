@@ -2,6 +2,8 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { Carrera, Curso, Jornada, Empleado } from '../../core/models';
 import { PageHeaderComponent, ModalComponent, EmptyStateComponent, CustomSelectComponent, SelectOption } from '../../shared';
 
@@ -14,6 +16,8 @@ import { PageHeaderComponent, ModalComponent, EmptyStateComponent, CustomSelectC
 })
 export class AcademicoComponent implements OnInit {
   private apiService = inject(ApiService);
+  private toast = inject(ToastService);
+  private confirmService = inject(ConfirmService);
 
   carreras = signal<Carrera[]>([]);
   cursos = signal<Curso[]>([]);
@@ -158,12 +162,22 @@ export class AcademicoComponent implements OnInit {
     }
   }
 
-  deleteCarrera(carrera: Carrera): void {
-    if (confirm(`¿Está seguro de eliminar la carrera técnica "${carrera.nombre}"?`)) {
-      this.apiService.deleteCarrera(carrera.id).subscribe(() => {
+  async deleteCarrera(carrera: Carrera): Promise<void> {
+    const confirmed = await this.confirmService.confirm({
+      title: '¿Eliminar Carrera Técnica?',
+      message: `¿Está seguro de eliminar la carrera técnica "${carrera.nombre}"?`,
+      confirmText: 'Sí, Eliminar',
+      type: 'danger',
+    });
+    if (!confirmed) return;
+
+    this.apiService.deleteCarrera(carrera.id).subscribe({
+      next: () => {
+        this.toast.info('Carrera eliminada', `La carrera "${carrera.nombre}" fue eliminada.`);
         this.loadAll();
-      });
-    }
+      },
+      error: (err) => this.toast.error('Error', err.error?.message || 'Error al eliminar carrera'),
+    });
   }
 
   saveCurso(): void {
@@ -177,24 +191,42 @@ export class AcademicoComponent implements OnInit {
     };
 
     if (this.editingCursoId) {
-      this.apiService.updateCurso(this.editingCursoId, payload).subscribe(() => {
-        this.closeModal();
-        this.loadAll();
+      this.apiService.updateCurso(this.editingCursoId, payload).subscribe({
+        next: () => {
+          this.closeModal();
+          this.toast.success('Curso actualizado', 'Información del curso modificada con éxito.');
+          this.loadAll();
+        },
+        error: (err) => this.toast.error('Error', err.error?.message || 'Error al actualizar curso'),
       });
     } else {
-      this.apiService.createCurso(payload).subscribe(() => {
-        this.closeModal();
-        this.loadAll();
+      this.apiService.createCurso(payload).subscribe({
+        next: () => {
+          this.closeModal();
+          this.toast.success('Curso creado', 'Nuevo curso registrado con éxito.');
+          this.loadAll();
+        },
+        error: (err) => this.toast.error('Error', err.error?.message || 'Error al registrar curso'),
       });
     }
   }
 
-  deleteCurso(cur: Curso): void {
-    if (confirm(`¿Está seguro de eliminar el curso "${cur.nombre}"?`)) {
-      this.apiService.deleteCurso(cur.id).subscribe(() => {
+  async deleteCurso(cur: Curso): Promise<void> {
+    const confirmed = await this.confirmService.confirm({
+      title: '¿Eliminar Curso / Especialidad?',
+      message: `¿Está seguro de eliminar el curso "${cur.nombre}"?`,
+      confirmText: 'Sí, Eliminar',
+      type: 'danger',
+    });
+    if (!confirmed) return;
+
+    this.apiService.deleteCurso(cur.id).subscribe({
+      next: () => {
+        this.toast.info('Curso eliminado', `El curso "${cur.nombre}" fue eliminado.`);
         this.loadAll();
-      });
-    }
+      },
+      error: (err) => this.toast.error('Error', err.error?.message || 'Error al eliminar curso'),
+    });
   }
 
   saveJornada(): void {
@@ -208,23 +240,41 @@ export class AcademicoComponent implements OnInit {
     };
 
     if (this.editingJornadaId) {
-      this.apiService.updateJornada(this.editingJornadaId, payload).subscribe(() => {
-        this.closeModal();
-        this.loadAll();
+      this.apiService.updateJornada(this.editingJornadaId, payload).subscribe({
+        next: () => {
+          this.closeModal();
+          this.toast.success('Jornada actualizada', 'Horario de jornada modificado.');
+          this.loadAll();
+        },
+        error: (err) => this.toast.error('Error', err.error?.message || 'Error al actualizar jornada'),
       });
     } else {
-      this.apiService.createJornada(payload).subscribe(() => {
-        this.closeModal();
-        this.loadAll();
+      this.apiService.createJornada(payload).subscribe({
+        next: () => {
+          this.closeModal();
+          this.toast.success('Jornada creada', 'Nueva jornada registrada con éxito.');
+          this.loadAll();
+        },
+        error: (err) => this.toast.error('Error', err.error?.message || 'Error al registrar jornada'),
       });
     }
   }
 
-  deleteJornada(jornada: Jornada): void {
-    if (confirm(`¿Está seguro de eliminar la jornada "${jornada.nombre}"?`)) {
-      this.apiService.deleteJornada(jornada.id).subscribe(() => {
+  async deleteJornada(jornada: Jornada): Promise<void> {
+    const confirmed = await this.confirmService.confirm({
+      title: '¿Eliminar Jornada de Horario?',
+      message: `¿Está seguro de eliminar la jornada "${jornada.nombre}"?`,
+      confirmText: 'Sí, Eliminar',
+      type: 'danger',
+    });
+    if (!confirmed) return;
+
+    this.apiService.deleteJornada(jornada.id).subscribe({
+      next: () => {
+        this.toast.info('Jornada eliminada', `La jornada "${jornada.nombre}" fue eliminada.`);
         this.loadAll();
-      });
-    }
+      },
+      error: (err) => this.toast.error('Error', err.error?.message || 'Error al eliminar jornada'),
+    });
   }
 }

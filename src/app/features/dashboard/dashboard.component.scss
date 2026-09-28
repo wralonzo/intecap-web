@@ -261,3 +261,124 @@
     color: var(--text-secondary);
   }
 }
+
+.today-events-card {
+  background: linear-gradient(to right, #FFFFFF, #F8FAFC);
+  border: 2px solid var(--intecap-gold);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.today-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  .today-title-group {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+
+    h3 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--intecap-navy-dark);
+      margin: 0;
+    }
+  }
+}
+
+.live-pulse {
+  width: 12px;
+  height: 12px;
+  background-color: #22C55E;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  animation: pulse-green 1.8s infinite;
+}
+
+@keyframes pulse-green {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+.today-events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.event-item-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--intecap-navy);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .event-time-badge {
+    display: inline-block;
+    align-self: flex-start;
+    background: var(--intecap-blue-light);
+    color: var(--intecap-navy);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-sm);
+  }
+
+  .event-name {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--intecap-navy-dark);
+    margin: 0.2rem 0 0.1rem;
+  }
+
+  p {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  .event-status {
+    margin-top: 0.5rem;
+  }
+}
+
+.event-type-badge {
+  font-weight: 700;
+  color: var(--intecap-navy-dark);
+  font-size: 0.875rem;
+}
+
+.event-date-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+.room-title-text {
+  font-weight: 700;
+  color: var(--intecap-navy);
+}

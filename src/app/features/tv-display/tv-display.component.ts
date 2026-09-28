@@ -129,6 +129,7 @@ export class TvDisplayComponent implements OnInit, OnDestroy {
   });
 
   isOcupado(s: RealtimeSalonStatus): boolean {
+    if (s.eventoActivo) return true;
     const hour = new Date().getHours();
     if (hour < 12) return !!s.turnos?.manana?.ocupado;
     if (hour < 18) return !!s.turnos?.tarde?.ocupado;
@@ -136,6 +137,9 @@ export class TvDisplayComponent implements OnInit, OnDestroy {
   }
 
   getCursoActual(s: RealtimeSalonStatus): string | null {
+    if (s.eventoActivo) {
+      return `${s.eventoActivo.tipoEvento}: ${s.eventoActivo.curso || s.eventoActivo.horario}`;
+    }
     const hour = new Date().getHours();
     if (hour < 12) return s.turnos?.manana?.curso || null;
     if (hour < 18) return s.turnos?.tarde?.curso || null;

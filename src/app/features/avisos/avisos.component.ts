@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { WebSocketService } from '../../core/services/websocket.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { Aviso } from '../../core/models';
 import {
   ModalComponent,
@@ -76,6 +77,7 @@ export class AvisosComponent implements OnInit {
   private readonly api = inject(ApiService);
   private readonly ws = inject(WebSocketService);
   private readonly toast = inject(ToastService);
+  private readonly confirmService = inject(ConfirmService);
 
   avisos = signal<Aviso[]>([]);
   loading = signal<boolean>(true);
@@ -287,16 +289,22 @@ export class AvisosComponent implements OnInit {
     });
   }
 
-  deleteAviso(a: Aviso) {
-    if (confirm(`¿Estás seguro de eliminar el aviso "${a.titulo}"?`)) {
-      this.api.deleteAviso(a.id).subscribe({
-        next: () => {
-          this.toast.info('Aviso eliminado', `El aviso "${a.titulo}" ha sido removido.`);
-          this.loadAvisos(false);
-        },
-        error: (err) =>
-          this.toast.error('Error', err.error?.message || err.message || 'Error al eliminar aviso'),
-      });
-    }
+  async deleteAviso(a: Aviso): Promise<void> {
+    const confirmed = await this.confirmService.confirm({
+      title: '¿Eliminar Aviso Informativo?',
+      message: `¿Estás seguro de eliminar el aviso "${a.titulo}"? Dejará de rotar en las pantallas de TV y portal.`,
+      confirmText: 'Sí, Eliminar',
+      type: 'danger',
+    });
+    if (!confirmed) return;
+
+    this.api.deleteAviso(a.id).subscribe({
+      next: () => {
+        this.toast.info('Aviso eliminado', `El aviso "${a.titulo}" ha sido removido.`);
+        this.loadAvisos(false);
+      },
+      error: (err) =>
+        this.toast.error('Error', err.error?.message || err.message || 'Error al eliminar aviso'),
+    });
   }
 }

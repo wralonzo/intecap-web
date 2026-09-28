@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { exportToCsv, printHtmlReport } from '../../core/utils/export.util';
 import { ControlCalidad, Empleado, CalidadEstadisticas } from '../../core/models';
 import { PageHeaderComponent, EmptyStateComponent, CustomSelectComponent, SelectOption } from '../../shared';
@@ -17,6 +18,7 @@ import { PageHeaderComponent, EmptyStateComponent, CustomSelectComponent, Select
 export class CalidadComponent implements OnInit {
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
+  private readonly confirmService = inject(ConfirmService);
 
   currentView = signal<'list' | 'form' | 'report'>('list');
   evaluaciones = signal<ControlCalidad[]>([]);
@@ -329,8 +331,14 @@ export class CalidadComponent implements OnInit {
     }
   }
 
-  deleteEvaluacion(id: number) {
-    if (!confirm(`¿Estás seguro de eliminar la evaluación #${id}?`)) return;
+  async deleteEvaluacion(id: number): Promise<void> {
+    const confirmed = await this.confirmService.confirm({
+      title: '¿Eliminar Evaluación de Calidad?',
+      message: `¿Estás seguro de eliminar el registro de evaluación #${id}? Esta acción no se puede deshacer.`,
+      confirmText: 'Sí, Eliminar',
+      type: 'danger',
+    });
+    if (!confirmed) return;
 
     this.api.deleteCalidad(id).subscribe({
       next: () => {

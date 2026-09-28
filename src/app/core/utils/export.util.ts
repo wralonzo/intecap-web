@@ -54,7 +54,7 @@ export function exportToCsv(arg1: any, arg2?: any, arg3?: string[]): void {
 export function printHtmlReport(title: string, tableHtml: string, subtitle?: string): void {
   const printWindow = window.open('', '_blank');
   if (!printWindow) {
-    alert('Por favor habilite las ventanas emergentes para generar el reporte impreso/PDF.');
+    console.warn('Ventanas emergentes bloqueadas para generar el reporte impreso/PDF.');
     return;
   }
 
