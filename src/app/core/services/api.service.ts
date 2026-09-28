@@ -20,6 +20,9 @@ import {
   SalonMatrizHorario,
   RealtimeResponse,
   Aviso,
+  AuditLog,
+  AuditLogStats,
+  AuditFilter,
 } from '../models';
 import {
   normalizeUser,
@@ -76,15 +79,23 @@ export class ApiService {
       .pipe(map((res) => (res || []).map(normalizePosition)));
   }
 
-  createPuesto(data: { name: string }): Observable<TipoEmpleado> {
+  createPuesto(data: { name: string; tipoEmpleado?: string }): Observable<TipoEmpleado> {
+    const payload = {
+      tipoEmpleado: data.tipoEmpleado || data.name,
+      ...data,
+    };
     return this.http
-      .post<TipoEmpleado>(`${this.baseUrl}/empleados/puestos`, data)
+      .post<TipoEmpleado>(`${this.baseUrl}/empleados/puestos`, payload)
       .pipe(map(normalizePosition));
   }
 
-  updatePuesto(id: number, data: { name?: string; estado?: number }): Observable<TipoEmpleado> {
+  updatePuesto(id: number, data: { name?: string; tipoEmpleado?: string; estado?: number; status?: number }): Observable<TipoEmpleado> {
+    const payload: any = { ...data };
+    if (data.name) {
+      payload.tipoEmpleado = data.name;
+    }
     return this.http
-      .put<TipoEmpleado>(`${this.baseUrl}/empleados/puestos/${id}`, data)
+      .put<TipoEmpleado>(`${this.baseUrl}/empleados/puestos/${id}`, payload)
       .pipe(map(normalizePosition));
   }
 
@@ -536,6 +547,28 @@ export class ApiService {
 
   deleteAviso(id: number): Observable<{ message: string; id: number }> {
     return this.http.delete<{ message: string; id: number }>(`${this.baseUrl}/avisos/${id}`);
+  }
+
+  // Auditoría y Bitácora de Acciones
+  getAuditLogs(limit = 50, offset = 0, filter?: AuditFilter): Observable<PaginatedResponse<AuditLog>> {
+    let params = new HttpParams().set('limit', limit).set('offset', offset);
+    if (filter) {
+      if (filter.module && filter.module !== 'TODOS') params = params.set('module', filter.module);
+      if (filter.action && filter.action !== 'TODAS') params = params.set('action', filter.action);
+      if (filter.userId) params = params.set('userId', filter.userId);
+      if (filter.search && filter.search.trim() !== '') params = params.set('search', filter.search.trim());
+      if (filter.startDate) params = params.set('startDate', filter.startDate);
+      if (filter.endDate) params = params.set('endDate', filter.endDate);
+    }
+    return this.http.get<PaginatedResponse<AuditLog>>(`${this.baseUrl}/audit`, { params });
+  }
+
+  getAuditStats(): Observable<AuditLogStats> {
+    return this.http.get<AuditLogStats>(`${this.baseUrl}/audit/stats`);
+  }
+
+  getAuditLogById(id: number): Observable<AuditLog> {
+    return this.http.get<AuditLog>(`${this.baseUrl}/audit/${id}`);
   }
 }
 

@@ -1,0 +1,304 @@
+<div class="auditoria-page">
+  <!-- Page Header -->
+  <app-page-header
+    title="Centro de Auditoría y Bitácora de Acciones"
+    subtitle="Trazabilidad inmutable de cambios, operaciones administrativas y control de accesos para aseguramiento de calidad institucional.">
+    <div header-actions class="header-actions-group">
+      <button class="btn btn-secondary btn-sm" (click)="exportExcel()" title="Descargar bitácora en formato CSV / Excel">
+        📊 Exportar Excel
+      </button>
+      <button class="btn btn-secondary btn-sm" (click)="exportPdf()" title="Imprimir informe oficial de auditoría">
+        🖨️ Imprimir PDF
+      </button>
+    </div>
+  </app-page-header>
+
+  <!-- KPI Summary Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon bg-navy-light">📜</div>
+      <div class="stat-info">
+        <span class="stat-label">Total de Eventos Registrados</span>
+        <span class="stat-value">{{ stats().total }}</span>
+        <span class="stat-sub">Historial global inmutable</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon bg-emerald-light">⚡</div>
+      <div class="stat-info">
+        <span class="stat-label">Operaciones de Hoy</span>
+        <span class="stat-value text-emerald">{{ stats().totalHoy }}</span>
+        <span class="stat-sub">Actividad en la jornada actual</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon bg-gold-light">🏛️</div>
+      <div class="stat-info">
+        <span class="stat-label">Módulo Más Activo</span>
+        <span class="stat-value text-gold">{{ topModulo() }}</span>
+        <span class="stat-sub">Mayor frecuencia de cambios</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon bg-rose-light">🛡️</div>
+      <div class="stat-info">
+        <span class="stat-label">Acciones Críticas / Bajas</span>
+        <span class="stat-value text-rose">{{ accionesCriticasCount() }}</span>
+        <span class="stat-sub">Eliminaciones y rechazos</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Advanced Filters Toolbar Card -->
+  <div class="card filter-card">
+    <div class="filter-grid">
+      <!-- Search Input -->
+      <div class="search-col">
+        <label class="filter-label">Búsqueda General</label>
+        <div class="search-box">
+          <svg class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            class="form-control search-input"
+            placeholder="Buscar por usuario, descripción, IP o módulo..."
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event); onFilterChange()"
+          />
+          @if (searchQuery()) {
+            <button class="clear-search-btn" (click)="searchQuery.set(''); onFilterChange()">&times;</button>
+          }
+        </div>
+      </div>
+
+      <!-- Select Módulo -->
+      <div class="select-col">
+        <app-custom-select
+          label="Filtrar por Módulo"
+          [options]="moduloOptions"
+          [ngModel]="selectedModule()"
+          (ngModelChange)="selectedModule.set($event); onFilterChange()"
+          [searchable]="false"
+          placeholder="Seleccionar módulo..."
+        ></app-custom-select>
+      </div>
+
+      <!-- Select Acción -->
+      <div class="select-col">
+        <app-custom-select
+          label="Tipo de Operación"
+          [options]="accionOptions"
+          [ngModel]="selectedAction()"
+          (ngModelChange)="selectedAction.set($event); onFilterChange()"
+          [searchable]="false"
+          placeholder="Seleccionar acción..."
+        ></app-custom-select>
+      </div>
+
+      <!-- Date Range Pickers -->
+      <div class="date-col">
+        <label class="filter-label">Desde Fecha</label>
+        <input
+          type="date"
+          class="form-control date-input"
+          [ngModel]="startDate()"
+          (ngModelChange)="startDate.set($event); onFilterChange()"
+        />
+      </div>
+
+      <div class="date-col">
+        <label class="filter-label">Hasta Fecha</label>
+        <input
+          type="date"
+          class="form-control date-input"
+          [ngModel]="endDate()"
+          (ngModelChange)="endDate.set($event); onFilterChange()"
+        />
+      </div>
+
+      <div class="btn-clear-col">
+        <button class="btn btn-secondary btn-clear" (click)="clearFilters()" title="Restablecer todos los filtros">
+          Limpiar Filtros
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audit Table Card -->
+  <div class="card table-card">
+    @if (loading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Consultando bitácora de auditoría y trazabilidad...</p>
+      </div>
+    } @else if (logs().length === 0) {
+      <app-empty-state
+        icon="🛡️"
+        title="No se encontraron registros de auditoría"
+        message="No existen eventos que coincidan con los filtros y rango de fechas seleccionados.">
+        <button (click)="clearFilters()" class="btn btn-primary btn-sm">Restablecer Filtros</button>
+      </app-empty-state>
+    } @else {
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 70px;">ID</th>
+              <th style="width: 155px;">Fecha y Hora</th>
+              <th style="width: 170px;">Usuario / Operador</th>
+              <th style="width: 140px;">Módulo</th>
+              <th style="width: 130px;">Acción</th>
+              <th>Descripción del Evento</th>
+              <th style="width: 120px;">Dirección IP</th>
+              <th style="width: 90px; text-align: right;">Detalle</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (log of logs(); track log.id) {
+              <tr>
+                <td class="font-mono text-muted">#{{ log.id }}</td>
+                <td>
+                  <div class="date-cell">
+                    <span class="date-main">{{ log.createdAt | date:'dd/MM/yyyy' }}</span>
+                    <span class="date-time text-muted">{{ log.createdAt | date:'HH:mm:ss' }}</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="user-meta">
+                    <div class="avatar-circle">
+                      {{ (log.username || 'S').charAt(0).toUpperCase() }}
+                    </div>
+                    <div class="user-details">
+                      <div class="font-bold text-navy">&#64;{{ log.username || (log.user ? log.user.username : 'Sistema') }}</div>
+                      @if (log.user?.empleado) {
+                        <div class="text-xs text-muted">
+                          {{ log.user?.empleado?.nombres || log.user?.empleado?.firstName }} {{ log.user?.empleado?.apellidos || log.user?.empleado?.lastName }}
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="module-badge module-{{ log.module.toLowerCase() }}">
+                    {{ log.module }}
+                  </span>
+                </td>
+                <td>
+                  <span class="action-badge" [class]="getActionBadgeClass(log.action)">
+                    {{ getActionIcon(log.action) }} {{ log.action }}
+                  </span>
+                </td>
+                <td>
+                  <div class="log-description">
+                    {{ log.description }}
+                  </div>
+                </td>
+                <td>
+                  <span class="ip-badge font-mono">
+                    {{ log.ipAddress || '127.0.0.1' }}
+                  </span>
+                </td>
+                <td class="text-right">
+                  <button (click)="openDetail(log)" class="btn-inspect" title="Ver detalles completos del evento">
+                    🔍 Ver
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Footer -->
+      <div class="table-pagination">
+        <div class="pagination-info">
+          Mostrando <strong>{{ logs().length }}</strong> de <strong>{{ totalLogs() }}</strong> registros de auditoría
+        </div>
+        <div class="pagination-controls">
+          <button
+            class="btn-page"
+            [disabled]="currentPage() === 1"
+            (click)="goToPage(currentPage() - 1)">
+            ← Anterior
+          </button>
+          <span class="page-current">Página {{ currentPage() }} de {{ totalPages() }}</span>
+          <button
+            class="btn-page"
+            [disabled]="currentPage() === totalPages()"
+            (click)="goToPage(currentPage() + 1)">
+            Siguiente →
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Detail Inspection Modal -->
+  @if (showDetailModal() && selectedLog()) {
+    <app-modal title="🛡️ Detalle del Registro de Auditoría" (close)="closeDetail()">
+      <div class="detail-container">
+        <div class="detail-header-card">
+          <div class="detail-header-left">
+            <span class="action-badge-lg" [class]="getActionBadgeClass(selectedLog()!.action)">
+              {{ getActionIcon(selectedLog()!.action) }} {{ selectedLog()!.action }}
+            </span>
+            <div>
+              <h3 class="detail-title">{{ selectedLog()!.description }}</h3>
+              <p class="detail-subtitle">Evento registrado el {{ selectedLog()!.createdAt | date:'fullDate' }} a las {{ selectedLog()!.createdAt | date:'mediumTime' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">ID de Registro</span>
+            <span class="detail-val font-mono">#{{ selectedLog()!.id }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Usuario / Operador</span>
+            <span class="detail-val font-bold text-navy">&#64;{{ selectedLog()!.username || (selectedLog()!.user ? selectedLog()!.user?.username : 'Sistema') }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Módulo Institucional</span>
+            <span class="detail-val font-semibold">{{ selectedLog()!.module }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">ID de Recurso Afectado</span>
+            <span class="detail-val font-mono">{{ selectedLog()!.resourceId || 'N/A' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Dirección IP de Origen</span>
+            <span class="detail-val font-mono">{{ selectedLog()!.ipAddress || '127.0.0.1' }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Dispositivo / Agente</span>
+            <span class="detail-val text-muted text-xs">{{ selectedLog()!.userAgent || 'Cliente Web' }}</span>
+          </div>
+        </div>
+
+        <!-- Metadata / Payload Inspector -->
+        @if (selectedLog()!.metadata) {
+          <div class="metadata-card">
+            <div class="metadata-header">
+              <span>📦 Carga Útil y Metadatos de la Operación (JSON)</span>
+            </div>
+            <pre class="metadata-pre"><code>{{ selectedLog()!.metadata | json }}</code></pre>
+          </div>
+        }
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-primary" (click)="closeDetail()">Cerrar</button>
+        </div>
+      </div>
+    </app-modal>
+  }
+</div>

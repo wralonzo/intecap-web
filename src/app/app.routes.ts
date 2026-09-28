@@ -11,6 +11,7 @@ import { CalidadComponent } from './features/calidad/calidad.component';
 import { AvisosComponent } from './features/avisos/avisos.component';
 import { UsersListComponent } from './features/users/users-list.component';
 import { TvDisplayComponent } from './features/tv-display/tv-display.component';
+import { AuditoriaComponent } from './features/auditoria/auditoria.component';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 
@@ -92,6 +93,13 @@ export const routes: Routes = [
         component: CalidadComponent,
         canActivate: [roleGuard],
         data: { roles: ['ADMIN', 'DOCENTE'] },
+      },
+      {
+        path: 'auditoria',
+        component: AuditoriaComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] },
+        title: 'INTECAP - Centro de Auditoría y Bitácora',
       },
     ],
   },

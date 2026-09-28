@@ -433,4 +433,37 @@ export interface Aviso {
 }
 export type Announcement = Aviso;
 
+export interface AuditLog {
+  id: number;
+  userId?: number | null;
+  user?: User | null;
+  username?: string;
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'APPROVE' | 'REJECT' | 'STATUS_CHANGE' | string;
+  module: 'USUARIOS' | 'EMPLEADOS' | 'SALONES' | 'RESERVACIONES' | 'ACADEMICO' | 'INVENTARIO' | 'CALIDAD' | 'AVISOS' | 'AUTH' | string;
+  resourceId?: string;
+  description: string;
+  ipAddress?: string;
+  userAgent?: string;
+  metadata?: any;
+  createdAt: string;
+}
+
+export interface AuditLogStats {
+  total: number;
+  totalHoy: number;
+  porAccion: { action: string; count: number }[];
+  porModulo: { module: string; count: number }[];
+  porUsuario: { username: string; count: number }[];
+}
+
+export interface AuditFilter {
+  module?: string;
+  action?: string;
+  userId?: number;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+
 
