@@ -14,7 +14,12 @@
     @if (errorMessage()) {
       <div class="alert-error">
         <svg class="alert-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
         <span>{{ errorMessage() }}</span>
       </div>
@@ -56,18 +61,6 @@
       </button>
     </form>
 
-    <!-- Quick Demo Accounts Helper -->
-    <div class="demo-helpers">
-      <div class="demo-title">Acceso Rápido / Registro de Prueba</div>
-      <div class="demo-buttons">
-        <button type="button" (click)="quickRegister()" class="btn btn-secondary btn-sm">
-          Crear Usuario Demo (admin/123456)
-        </button>
-      </div>
-    </div>
-
-    <div class="login-footer">
-      Instituto Técnico de Capacitación y Productividad — Guatemala
-    </div>
+    <div class="login-footer">Instituto Técnico de Capacitación y Productividad — Guatemala</div>
   </div>
 </div>

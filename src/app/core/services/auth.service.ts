@@ -4,8 +4,9 @@ import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { User, UserRole } from '../models';
 
-interface LoginResponse {
+export interface LoginResponse {
   access_token: string;
+  refresh_token?: string;
   user: User;
 }
 
@@ -15,10 +16,12 @@ interface LoginResponse {
 export class AuthService {
   private readonly apiUrl = `${environment.apiUrl}/auth`;
   private readonly TOKEN_KEY = 'intecap_jwt_token';
+  private readonly REFRESH_TOKEN_KEY = 'intecap_refresh_token';
   private readonly USER_KEY = 'intecap_user_data';
 
   currentUser = signal<User | null>(this.getStoredUser());
   token = signal<string | null>(this.getStoredToken());
+  refreshToken = signal<string | null>(this.getStoredRefreshToken());
 
   isAuthenticated = computed(() => !!this.token());
   role = computed<UserRole>(() => {
@@ -41,9 +44,20 @@ export class AuthService {
   login(credentials: { username: string; password: string }): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials).pipe(
       tap((res) => {
-        this.setSession(res.access_token, res.user);
+        this.setSession(res.access_token, res.user, res.refresh_token);
       })
     );
+  }
+
+  refreshAccessToken(): Observable<LoginResponse> {
+    const rToken = this.refreshToken() || this.getStoredRefreshToken();
+    return this.http
+      .post<LoginResponse>(`${this.apiUrl}/refresh`, { refreshToken: rToken })
+      .pipe(
+        tap((res) => {
+          this.setSession(res.access_token, res.user, res.refresh_token);
+        })
+      );
   }
 
   register(userData: any): Observable<any> {
@@ -52,20 +66,30 @@ export class AuthService {
 
   logout(): void {
     localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
     this.token.set(null);
+    this.refreshToken.set(null);
     this.currentUser.set(null);
   }
 
-  private setSession(token: string, user: User): void {
+  private setSession(token: string, user: User, refreshToken?: string): void {
     localStorage.setItem(this.TOKEN_KEY, token);
     localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+    if (refreshToken) {
+      localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
+      this.refreshToken.set(refreshToken);
+    }
     this.token.set(token);
     this.currentUser.set(user);
   }
 
   private getStoredToken(): string | null {
     return localStorage.getItem(this.TOKEN_KEY);
+  }
+
+  private getStoredRefreshToken(): string | null {
+    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
   }
 
   private getStoredUser(): User | null {

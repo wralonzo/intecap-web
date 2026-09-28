@@ -12,8 +12,8 @@ import { AuthService } from '../../core/services/auth.service';
   styleUrl: './login.component.scss',
 })
 export class LoginComponent {
-  private authService = inject(AuthService);
-  private router = inject(Router);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
 
   username = 'admin';
   password = 'password123';
@@ -37,30 +37,9 @@ export class LoginComponent {
       error: (err) => {
         this.loading.set(false);
         this.errorMessage.set(
-          err.error?.message || 'Usuario o contraseña incorrectos. Si no tienes cuenta, usa el botón de crear cuenta demo abajo.'
+          err.error?.message ||
+            'Usuario o contraseña incorrectos. Si no tienes cuenta, usa el botón de crear cuenta demo abajo.',
         );
-      },
-    });
-  }
-
-  quickRegister(): void {
-    this.loading.set(true);
-    this.errorMessage.set(null);
-
-    const demoUser = {
-      username: 'admin',
-      password: 'password123',
-      staff: 1,
-    };
-
-    this.authService.register(demoUser).subscribe({
-      next: () => {
-        // Automatically login
-        this.onSubmit();
-      },
-      error: () => {
-        // If user already exists, try logging in
-        this.onSubmit();
       },
     });
   }
