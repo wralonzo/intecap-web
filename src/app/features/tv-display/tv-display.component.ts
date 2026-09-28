@@ -257,7 +257,10 @@ export class TvDisplayComponent implements OnInit, OnDestroy {
 
   loadRealtimeData(showSpinner = true) {
     if (showSpinner) this.loading.set(true);
-    this.api.getRealtimeDisponibilidad().subscribe({
+    const localDayIndex = new Date().getDay();
+    const diasMap = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
+    const diaParam = diasMap[localDayIndex];
+    this.api.getRealtimeDisponibilidad(undefined, diaParam).subscribe({
       next: (res) => {
         this.realtimeData.set(res);
         this.loading.set(false);

@@ -203,7 +203,12 @@ export class SalonesListComponent implements OnInit {
   // RealTime Methods
   loadRealtime() {
     this.loading.set(true);
-    const diaParam = this.selectedDia() === 'Hoy' ? undefined : this.selectedDia();
+    let diaParam = this.selectedDia();
+    if (diaParam === 'Hoy') {
+      const localDayIndex = new Date().getDay();
+      const diasMap = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
+      diaParam = diasMap[localDayIndex];
+    }
     this.api.getRealtimeDisponibilidad(this.realtimeTipo(), diaParam).subscribe({
       next: (res) => {
         this.realtimeData.set(res);
@@ -358,21 +363,21 @@ export class SalonesListComponent implements OnInit {
     this.showHorarioModal.set(true);
     this.cdr.markForCheck();
 
-    const foundRow = this.matrizData().find((r) => r.salon.id === salonId);
-    if (foundRow && foundRow.dias) {
-      this.currentEditingSalonHorario.set(foundRow);
-      this.loadHorarioForSelectedDia();
-    } else {
-      this.api.getSalonHorario(salonId).subscribe({
-        next: (res) => {
-          this.currentEditingSalonHorario.set(res);
-          this.loadHorarioForSelectedDia();
-        },
-        error: () => {
-          this.loadHorarioForSelectedDia();
-        },
-      });
-    }
+    // Consultar directamente el horario más fresco del backend
+    this.api.getSalonHorario(salonId).subscribe({
+      next: (res) => {
+        this.currentEditingSalonHorario.set(res);
+        this.loadHorarioForSelectedDia();
+      },
+      error: () => {
+        // Fallback a matriz local si existe
+        const foundRow = this.matrizData().find((r) => r.salon.id === salonId);
+        if (foundRow) {
+          this.currentEditingSalonHorario.set(foundRow);
+        }
+        this.loadHorarioForSelectedDia();
+      },
+    });
   }
 
   onDiaChange(newDiaId: number) {
