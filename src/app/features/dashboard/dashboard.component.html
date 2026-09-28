@@ -103,10 +103,10 @@
             <tbody>
               @for (r of recentReservaciones(); track r.id) {
                 <tr>
-                  <td class="font-medium text-navy">{{ r.salon?.title || 'Salón #' + r.salonId }}</td>
-                  <td>{{ r.empleado ? r.empleado.nombres + ' ' + r.empleado.apellidos : '-' }}</td>
-                  <td>{{ r.curso?.nombre || '-' }}</td>
-                  <td>{{ r.jornada || 'General' }}</td>
+                  <td class="font-medium text-navy">{{ r.salon?.title || r.room?.title || 'Salón #' + (r.salonId || r.roomId) }}</td>
+                  <td>{{ r.empleado ? (r.empleado.nombres || r.empleado.firstName) + ' ' + (r.empleado.apellidos || r.empleado.lastName) : '-' }}</td>
+                  <td>{{ r.curso?.nombre || r.curso?.name || '-' }}</td>
+                  <td>{{ r.jornada || r.shiftName || 'General' }}</td>
                   <td>
                     <span class="badge badge-success">Confirmada</span>
                   </td>

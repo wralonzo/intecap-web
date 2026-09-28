@@ -6,32 +6,76 @@ import { ApiService } from '../../core/services/api.service';
 import { WebSocketService } from '../../core/services/websocket.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Aviso } from '../../core/models';
-import { ModalComponent, PageHeaderComponent, EmptyStateComponent, CustomSelectComponent, SelectOption } from '../../shared';
+import {
+  ModalComponent,
+  PageHeaderComponent,
+  EmptyStateComponent,
+  CustomSelectComponent,
+  SelectOption,
+} from '../../shared';
 
 @Component({
   selector: 'app-avisos',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ModalComponent, PageHeaderComponent, EmptyStateComponent, CustomSelectComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    ModalComponent,
+    PageHeaderComponent,
+    EmptyStateComponent,
+    CustomSelectComponent,
+  ],
   templateUrl: './avisos.component.html',
   styleUrl: './avisos.component.scss',
 })
 export class AvisosComponent implements OnInit {
   tiposAvisoOptions: SelectOption[] = [
-    { value: 'informativo', label: 'Informativo General', icon: '📢', badge: 'Info', badgeColor: 'blue' },
-    { value: 'urgente', label: 'Urgente / Importante', icon: '🚨', badge: 'Alta', badgeColor: 'red' },
-    { value: 'evento', label: 'Evento / Taller Especial', icon: '📅', badge: 'Evento', badgeColor: 'gold' },
-    { value: 'mantenimiento', label: 'Mantenimiento / Infraestructura', icon: '🛠️', badge: 'Técnico', badgeColor: 'gray' },
+    {
+      value: 'informativo',
+      label: 'Informativo General',
+      icon: '📢',
+      badge: 'Info',
+      badgeColor: 'blue',
+    },
+    {
+      value: 'urgente',
+      label: 'Urgente / Importante',
+      icon: '🚨',
+      badge: 'Alta',
+      badgeColor: 'red',
+    },
+    {
+      value: 'evento',
+      label: 'Evento / Taller Especial',
+      icon: '📅',
+      badge: 'Evento',
+      badgeColor: 'gold',
+    },
+    {
+      value: 'mantenimiento',
+      label: 'Mantenimiento / Infraestructura',
+      icon: '🛠️',
+      badge: 'Técnico',
+      badgeColor: 'gray',
+    },
     { value: 'general', label: 'General', icon: '📌' },
   ];
 
   prioridadesOptions: SelectOption[] = [
-    { value: 1, label: 'Alta (Primer lugar en rotación)', icon: '⚡', badge: 'Prioridad 1', badgeColor: 'red' },
+    {
+      value: 1,
+      label: 'Alta (Primer lugar en rotación)',
+      icon: '⚡',
+      badge: 'Prioridad 1',
+      badgeColor: 'red',
+    },
     { value: 2, label: 'Normal / Media', icon: '🔹', badge: 'Prioridad 2', badgeColor: 'blue' },
     { value: 3, label: 'Baja', icon: '▫️', badge: 'Prioridad 3', badgeColor: 'gray' },
   ];
-  private api = inject(ApiService);
-  private ws = inject(WebSocketService);
-  private toast = inject(ToastService);
+  private readonly api = inject(ApiService);
+  private readonly ws = inject(WebSocketService);
+  private readonly toast = inject(ToastService);
 
   avisos = signal<Aviso[]>([]);
   loading = signal<boolean>(true);
@@ -68,7 +112,9 @@ export class AvisosComponent implements OnInit {
   // Computed Values
   totalAvisos = computed(() => this.avisos().length);
   avisosTvCount = computed(() => this.avisos().filter((a) => a.mostrarEnTv).length);
-  avisosUrgentesCount = computed(() => this.avisos().filter((a) => a.tipo === 'urgente' || a.prioridad === 1).length);
+  avisosUrgentesCount = computed(
+    () => this.avisos().filter((a) => a.tipo === 'urgente' || a.prioridad === 1).length,
+  );
   avisosEventosCount = computed(() => this.avisos().filter((a) => a.tipo === 'evento').length);
 
   filteredAvisos = computed(() => {
@@ -174,7 +220,10 @@ export class AvisosComponent implements OnInit {
 
   saveAviso() {
     if (!this.formData.titulo.trim() || !this.formData.contenido.trim()) {
-      this.toast.warning('Campos requeridos', 'Por favor completa el título y el contenido del aviso.');
+      this.toast.warning(
+        'Campos requeridos',
+        'Por favor completa el título y el contenido del aviso.',
+      );
       return;
     }
 
@@ -185,12 +234,18 @@ export class AvisosComponent implements OnInit {
         next: () => {
           this.saving.set(false);
           this.closeModal();
-          this.toast.success('Aviso actualizado', 'El aviso informativo fue actualizado correctamente.');
+          this.toast.success(
+            'Aviso actualizado',
+            'El aviso informativo fue actualizado correctamente.',
+          );
           this.loadAvisos(false);
         },
         error: (err) => {
           this.saving.set(false);
-          this.toast.error('Error', err.error?.message || err.message || 'Error al actualizar aviso');
+          this.toast.error(
+            'Error',
+            err.error?.message || err.message || 'Error al actualizar aviso',
+          );
         },
       });
     } else {
@@ -213,14 +268,22 @@ export class AvisosComponent implements OnInit {
     this.api.toggleAvisoTv(a.id).subscribe({
       next: (actualizado) => {
         this.avisos.update((list) =>
-          list.map((item) => (item.id === a.id ? { ...item, mostrarEnTv: actualizado.mostrarEnTv } : item))
+          list.map((item) =>
+            item.id === a.id ? { ...item, mostrarEnTv: actualizado.mostrarEnTv } : item,
+          ),
         );
         this.toast.info(
           'Pantalla TV',
-          actualizado.mostrarEnTv ? 'Aviso activado para rotación en TV.' : 'Aviso ocultado de pantallas TV.'
+          actualizado.mostrarEnTv
+            ? 'Aviso activado para rotación en TV.'
+            : 'Aviso ocultado de pantallas TV.',
         );
       },
-      error: (err) => this.toast.error('Error', err.error?.message || err.message || 'Error al cambiar visualización en TV'),
+      error: (err) =>
+        this.toast.error(
+          'Error',
+          err.error?.message || err.message || 'Error al cambiar visualización en TV',
+        ),
     });
   }
 
@@ -231,7 +294,8 @@ export class AvisosComponent implements OnInit {
           this.toast.info('Aviso eliminado', `El aviso "${a.titulo}" ha sido removido.`);
           this.loadAvisos(false);
         },
-        error: (err) => this.toast.error('Error', err.error?.message || err.message || 'Error al eliminar aviso'),
+        error: (err) =>
+          this.toast.error('Error', err.error?.message || err.message || 'Error al eliminar aviso'),
       });
     }
   }

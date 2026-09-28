@@ -13,8 +13,8 @@ import { RealtimeSalonStatus, RealtimeResponse, Aviso } from '../../core/models'
   styleUrl: './tv-display.component.scss',
 })
 export class TvDisplayComponent implements OnInit, OnDestroy {
-  private api = inject(ApiService);
-  private ws = inject(WebSocketService);
+  private readonly api = inject(ApiService);
+  private readonly ws = inject(WebSocketService);
 
   // Realtime Data Signals
   realtimeData = signal<RealtimeResponse | null>(null);
@@ -40,13 +40,17 @@ export class TvDisplayComponent implements OnInit, OnDestroy {
 
   // Computed Values
   salonesList = computed(() => this.realtimeData()?.data || []);
-  
+
   totalCount = computed(() => this.salonesList().length);
-  talleresCount = computed(() => this.salonesList().filter((s) => s.tipoSalon === 0).length);
-  salonesCount = computed(() => this.salonesList().filter((s) => s.tipoSalon === 1).length);
+  talleresCount = computed(
+    () => this.salonesList().filter((s) => s.tipoSalon === 0 || s.roomType === 0).length,
+  );
+  salonesCount = computed(
+    () => this.salonesList().filter((s) => s.tipoSalon === 1 || s.roomType === 1).length,
+  );
   ocupadosCount = computed(() => this.salonesList().filter((s) => this.isOcupado(s)).length);
   disponiblesCount = computed(() => this.salonesList().filter((s) => !this.isOcupado(s)).length);
-  
+
   porcentajeOcupacion = computed(() => {
     const total = this.totalCount();
     if (total === 0) return 0;
@@ -55,7 +59,12 @@ export class TvDisplayComponent implements OnInit, OnDestroy {
 
   // Top Urgent Notice (Priority 1 or type 'urgente')
   urgentNotice = computed(() => {
-    return this.avisosTv().find((a) => a.tipo === 'urgente' || a.prioridad === 1) || null;
+    return (
+      this.avisosTv().find(
+        (a) =>
+          a.tipo === 'urgente' || a.type === 'urgente' || a.prioridad === 1 || a.priority === 1,
+      ) || null
+    );
   });
 
   // Formatted ticker text with all active TV notices
@@ -67,8 +76,18 @@ export class TvDisplayComponent implements OnInit, OnDestroy {
 
     return list
       .map((a) => {
-        const icon = a.tipo === 'urgente' ? '🚨' : a.tipo === 'evento' ? '📅' : a.tipo === 'mantenimiento' ? '🛠️' : '📢';
-        return `✦ ${icon} ${a.titulo.toUpperCase()}: ${a.contenido}`;
+        const tipo = a.tipo || a.type;
+        const titulo = a.titulo || a.title || 'COMUNICADO';
+        const contenido = a.contenido || a.content || '';
+        const icon =
+          tipo === 'urgente'
+            ? '🚨'
+            : tipo === 'evento'
+              ? '📅'
+              : tipo === 'mantenimiento'
+                ? '🛠️'
+                : '📢';
+        return `✦ ${icon} ${titulo.toUpperCase()}: ${contenido}`;
       })
       .join(' • ');
   });
@@ -79,9 +98,9 @@ export class TvDisplayComponent implements OnInit, OnDestroy {
 
     switch (filter) {
       case 'talleres':
-        return list.filter((s) => s.tipoSalon === 0);
+        return list.filter((s) => s.tipoSalon === 0 || s.roomType === 0);
       case 'salones':
-        return list.filter((s) => s.tipoSalon === 1);
+        return list.filter((s) => s.tipoSalon === 1 || s.roomType === 1);
       case 'ocupados':
         return list.filter((s) => this.isOcupado(s));
       case 'libres':
@@ -226,7 +245,12 @@ export class TvDisplayComponent implements OnInit, OnDestroy {
     const strHours = String(hours).padStart(2, '0');
     this.currentTime.set(`${strHours}:${minutes}:${seconds} ${ampm.toUpperCase()}`);
 
-    const options: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    };
     const dateStr = now.toLocaleDateString('es-GT', options);
     this.currentDate.set(dateStr.charAt(0).toUpperCase() + dateStr.slice(1));
   }
@@ -281,13 +305,19 @@ export class TvDisplayComponent implements OnInit, OnDestroy {
 
   toggleFullscreen() {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().then(() => {
-        this.isFullscreen.set(true);
-      }).catch(() => {});
+      document.documentElement
+        .requestFullscreen()
+        .then(() => {
+          this.isFullscreen.set(true);
+        })
+        .catch(() => {});
     } else {
-      document.exitFullscreen().then(() => {
-        this.isFullscreen.set(false);
-      }).catch(() => {});
+      document
+        .exitFullscreen()
+        .then(() => {
+          this.isFullscreen.set(false);
+        })
+        .catch(() => {});
     }
   }
 }
